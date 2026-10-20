@@ -2,65 +2,65 @@ import { useState } from 'react'
 
 const PHONE_PREFIX = '+56 9'
 
-const getSubscriberDigits = (phone) => {
-  const digits = phone.replace(/\D/g, '')
+const obtenerDigitosAbonado = (telefono) => {
+  const digitos = telefono.replace(/\D/g, '')
 
-  if (digits.startsWith('569')) {
-    return digits.slice(3, 11)
+  if (digitos.startsWith('569')) {
+    return digitos.slice(3, 11)
   }
 
-  if (digits.length === 9 && digits.startsWith('9')) {
-    return digits.slice(1)
+  if (digitos.length === 9 && digitos.startsWith('9')) {
+    return digitos.slice(1)
   }
 
-  return digits.slice(0, 8)
+  return digitos.slice(0, 8)
 }
 
-const formatSubscriberDigits = (digits) =>
-  [digits.slice(0, 4), digits.slice(4, 8)].filter(Boolean).join(' ')
+const formatearDigitosAbonado = (digitos) =>
+  [digitos.slice(0, 4), digitos.slice(4, 8)].filter(Boolean).join(' ')
 
-const formatPhone = (digits) =>
-  digits ? `${PHONE_PREFIX} ${formatSubscriberDigits(digits)}` : ''
+const formatearTelefono = (digitos) =>
+  digitos ? `${PHONE_PREFIX} ${formatearDigitosAbonado(digitos)}` : ''
 
-const validateCustomer = ({ name, phone }) => {
-  const errors = {}
-  const isChileanMobile = getSubscriberDigits(phone).length === 8
+const validarCliente = ({ name, phone }) => {
+  const errores = {}
+  const esCelularChileno = obtenerDigitosAbonado(phone).length === 8
 
   if (name.trim().length < 2) {
-    errors.name = 'Ingresa un nombre de al menos 2 caracteres.'
+    errores.name = 'Ingresa un nombre de al menos 2 caracteres.'
   }
 
-  if (!isChileanMobile) {
-    errors.phone = 'Completa los 8 dígitos restantes de tu celular.'
+  if (!esCelularChileno) {
+    errores.phone = 'Completa los 8 dígitos restantes de tu celular.'
   }
 
-  return errors
+  return errores
 }
 
 function CustomerForm({ customer, hasPendingRequests = false, onChange, onBack, onNext }) {
-  const [errors, setErrors] = useState({})
-  const subscriberDigits = getSubscriberDigits(customer.phone)
-  const isPhoneComplete = subscriberDigits.length === 8
+  const [errores, setErrores] = useState({})
+  const digitosAbonado = obtenerDigitosAbonado(customer.phone)
+  const telefonoCompleto = digitosAbonado.length === 8
 
-  const updateField = (field, value) => {
-    onChange({ ...customer, [field]: value })
+  const actualizarCampo = (campo, valor) => {
+    onChange({ ...customer, [campo]: valor })
 
-    if (errors[field]) {
-      setErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }))
+    if (errores[campo]) {
+      setErrores((erroresActuales) => ({ ...erroresActuales, [campo]: undefined }))
     }
   }
 
-  const updatePhone = (value) => {
-    const nextDigits = getSubscriberDigits(value)
-    updateField('phone', formatPhone(nextDigits))
+  const actualizarTelefono = (valor) => {
+    const nuevosDigitos = obtenerDigitosAbonado(valor)
+    actualizarCampo('phone', formatearTelefono(nuevosDigitos))
   }
 
-  const handleSubmit = (event) => {
+  const enviarFormulario = (event) => {
     event.preventDefault()
-    const nextErrors = validateCustomer(customer)
+    const nuevosErrores = validarCliente(customer)
 
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors)
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrores(nuevosErrores)
       return
     }
 
@@ -68,7 +68,7 @@ function CustomerForm({ customer, hasPendingRequests = false, onChange, onBack, 
   }
 
   return (
-    <form className="booking-step customer-form" onSubmit={handleSubmit} noValidate>
+    <form className="booking-step customer-form" onSubmit={enviarFormulario} noValidate>
       <div className="booking-step__heading">
         <p className="eyebrow">Paso 4</p>
         <h1>Tus datos de contacto</h1>
@@ -95,14 +95,14 @@ function CustomerForm({ customer, hasPendingRequests = false, onChange, onBack, 
           type="text"
           autoComplete="name"
           value={customer.name}
-          onChange={(event) => updateField('name', event.target.value)}
+          onChange={(event) => actualizarCampo('name', event.target.value)}
           placeholder="Ej. Camila Soto"
-          aria-invalid={Boolean(errors.name)}
-          aria-describedby={errors.name ? 'customer-name-error' : undefined}
+          aria-invalid={Boolean(errores.name)}
+          aria-describedby={errores.name ? 'customer-name-error' : undefined}
         />
-        {errors.name && (
+        {errores.name && (
           <span className="form-error" id="customer-name-error" role="alert">
-            {errors.name}
+            {errores.name}
           </span>
         )}
       </div>
@@ -119,20 +119,20 @@ function CustomerForm({ customer, hasPendingRequests = false, onChange, onBack, 
             type="tel"
             inputMode="numeric"
             autoComplete="tel-national"
-            value={formatSubscriberDigits(subscriberDigits)}
-            onChange={(event) => updatePhone(event.target.value)}
+            value={formatearDigitosAbonado(digitosAbonado)}
+            onChange={(event) => actualizarTelefono(event.target.value)}
             placeholder="1234 5678"
-            aria-invalid={Boolean(errors.phone)}
+            aria-invalid={Boolean(errores.phone)}
             aria-labelledby="customer-phone-label customer-phone-prefix"
-            aria-describedby={`customer-phone-help${errors.phone ? ' customer-phone-error' : ''}`}
+            aria-describedby={`customer-phone-help${errores.phone ? ' customer-phone-error' : ''}`}
           />
         </div>
         <span className="form-help" id="customer-phone-help">
-          Ingresa los 8 dígitos restantes. {subscriberDigits.length}/8
+          Ingresa los 8 dígitos restantes. {digitosAbonado.length}/8
         </span>
-        {errors.phone && (
+        {errores.phone && (
           <span className="form-error" id="customer-phone-error" role="alert">
-            {errors.phone}
+            {errores.phone}
           </span>
         )}
       </div>
@@ -144,7 +144,7 @@ function CustomerForm({ customer, hasPendingRequests = false, onChange, onBack, 
         <button
           className="button button--primary"
           type="submit"
-          disabled={!isPhoneComplete}
+          disabled={!telefonoCompleto}
         >
           Revisar solicitud
         </button>

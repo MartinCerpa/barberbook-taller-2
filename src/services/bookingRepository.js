@@ -155,6 +155,7 @@ export const saveBookingState = (state) => {
   try {
     const storage = getStorage()
     if (!storage || state.storageIssue || !validState(state)) return { success: false }
+    // Guarda reservas y clientes en el almacenamiento local de esta aplicación.
     storage.setItem(BOOKINGS_STORAGE_KEY, JSON.stringify(state))
     window.dispatchEvent?.(new Event(BOOKINGS_CHANGE_EVENT))
     return { success: true }

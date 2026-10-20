@@ -1,48 +1,66 @@
 import { useEffect, useState } from 'react'
-import { fetchHolidays } from '../services/holidayService.js'
+import { consultarFeriados } from '../services/holidayService.js'
 
-const cache = new Map()
-const CACHE_MS = 5 * 60 * 1000
+const cacheFeriados = new Map()
+const DURACION_CACHE_MS = 5 * 60 * 1000
 
-export default function useHolidays(dateIds) {
+export default function useFeriados(idsFechas) {
   // Puede haber dos años visibles en el cambio diciembre/enero.
-  const yearsKey = [...new Set(dateIds.filter(Boolean).map((id) => id.slice(0, 4)))]
+  const claveAnios = [...new Set(idsFechas.filter(Boolean).map((id) => id.slice(0, 4)))]
     .sort().join(',')
-  const [attempt, setAttempt] = useState(0)
-  const key = `${yearsKey}:${attempt}`
-  const [result, setResult] = useState(null)
+  const [intento, setIntento] = useState(0)
+  const claveConsulta = `${claveAnios}:${intento}`
+  const [resultado, setResultado] = useState(null)
 
   useEffect(() => {
-    const controller = new AbortController()
-    const years = yearsKey ? yearsKey.split(',').map(Number) : []
-    const load = async () => {
+    const controlador = new AbortController()
+    const anios = claveAnios ? claveAnios.split(',').map(Number) : []
+
+    // Consulta la API cuando cambia el año visible o se solicita un reintento.
+    const cargarFeriados = async () => {
       try {
-        const rows = await Promise.all(years.map(async (year) => {
-          const stored = cache.get(year)
-          if (stored && Date.now() - stored.time < CACHE_MS) return stored.rows
-          const holidays = await fetchHolidays(year, { signal: controller.signal })
-          if (!controller.signal.aborted) cache.set(year, { rows: holidays, time: Date.now() })
-          return holidays
+        const resultadosPorAnio = await Promise.all(anios.map(async (anio) => {
+          const guardado = cacheFeriados.get(anio)
+          if (guardado && Date.now() - guardado.hora < DURACION_CACHE_MS) {
+            return guardado.feriados
+          }
+
+          const feriados = await consultarFeriados(anio, { signal: controlador.signal })
+          if (!controlador.signal.aborted) {
+            cacheFeriados.set(anio, { feriados, hora: Date.now() })
+          }
+          return feriados
         }))
-        if (!controller.signal.aborted) {
-          setResult({ key, status: 'success', holidays: rows.flat() })
+
+        if (!controlador.signal.aborted) {
+          setResultado({
+            clave: claveConsulta,
+            estado: 'listo',
+            feriados: resultadosPorAnio.flat(),
+          })
         }
       } catch {
-        if (!controller.signal.aborted) setResult({ key, status: 'error', holidays: [] })
+        // Si la API falla, la reserva puede continuar normalmente.
+        if (!controlador.signal.aborted) {
+          setResultado({ clave: claveConsulta, estado: 'error', feriados: [] })
+        }
       }
     }
-    load()
-    return () => controller.abort()
-  }, [yearsKey, key])
 
-  const current = result?.key === key ? result : { status: 'loading', holidays: [] }
+    cargarFeriados()
+    return () => controlador.abort()
+  }, [claveAnios, claveConsulta])
+
+  const actual = resultado?.clave === claveConsulta
+    ? resultado
+    : { estado: 'cargando', feriados: [] }
+
   return {
-    ...current,
-    years: yearsKey.replaceAll(',', ' / '),
-    byDate: new Map(current.holidays.map((holiday) => [holiday.date, holiday.name])),
-    retry: () => {
-      yearsKey.split(',').forEach((year) => cache.delete(Number(year)))
-      setAttempt((value) => value + 1)
+    ...actual,
+    porFecha: new Map(actual.feriados.map((feriado) => [feriado.date, feriado.name])),
+    reintentar: () => {
+      claveAnios.split(',').forEach((anio) => cacheFeriados.delete(Number(anio)))
+      setIntento((valor) => valor + 1)
     },
   }
 }

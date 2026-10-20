@@ -1,82 +1,111 @@
-# Guion de presentación — 6 a 8 minutos
+# Guía breve para la defensa
 
-## Preparación
+## ¿Qué es BarberBook?
 
-1. Abrir esta carpeta independiente e iniciar `npm run dev`.
-2. Usar el mismo host y navegador durante toda la demostración.
-3. Verificar Internet; no ingresar nombres ni teléfonos reales.
-4. Tener abierto este guion, `DateSelector.jsx`, `useHolidays.js`, `holidayService.js`, `CustomerForm.jsx` y `bookingService.js`.
-5. No mostrar el producto comercial ni afirmar que este panel tiene autenticación.
+BarberBook es una aplicación React que permite demostrar dos recorridos: un cliente solicita una hora y un profesional revisa esa solicitud en su panel. Busca ordenar reservas que normalmente se coordinan mediante mensajes.
 
-## Recorrido
+Esta versión es académica. Usa datos ficticios, no tiene backend y no debe almacenar información personal real.
 
-**0:00 — Problema.** «Organizamos solicitudes que normalmente se dispersan por mensajes. Hay un cliente que solicita y un profesional que decide».
+## Tecnologías utilizadas
 
-**0:45 — Perfil.** Mostrar identidad Oficio cercano, modo claro/oscuro y botón reservar. Aclarar que es una preversión con datos ficticios.
+- React y JSX para construir la interfaz con componentes.
+- Vite para ejecutar y compilar el proyecto.
+- CSS para el diseño responsive y los temas claro/oscuro.
+- Fetch para consultar la API Nager.Holidays.
+- localStorage para mantener reservas y configuraciones al recargar.
+- `node:test` y Oxlint para comprobar lógica y revisar el código.
 
-**1:15 — Reserva.** Elegir servicio; observar avance automático. En fecha, explicar la consulta anual a Nager.Holidays y desplegar la lista de feriados. Si hay uno disponible, seleccionarlo: el feriado no implica cierre.
+## Cómo funciona una reserva
 
-**2:15 — Validación.** Elegir hora. Escribir un nombre ficticio y solo tres dígitos: revisar sigue deshabilitado. Completar los ocho dígitos, revisar precio/fecha y enviar explícitamente.
+1. El cliente selecciona servicio, fecha y hora.
+2. Completa un formulario controlado con nombre y teléfono.
+3. Revisa los datos antes de enviar.
+4. La solicitud se guarda en el navegador.
+5. En el panel, el profesional puede confirmarla o rechazarla.
+6. Si se confirma, aparece en la Agenda.
 
-**3:00 — Panel.** Abrir Solicitudes, localizar el cliente y confirmar. Abrir Agenda y elegir el mismo día. Recargar y volver a ese día: la reserva permanece. Rechazar otra solicitud ficticia y mostrar la pestaña Rechazadas.
+## Cómo funciona el panel
 
-**4:15 — React.** Explicar los componentes, props/callbacks y estado central del flujo. Mostrar el hook de feriados, el Fetch y la transformación.
+El panel permite revisar solicitudes, agenda, clientes y configuraciones de demostración. No tiene autenticación real. La información se obtiene de servicios locales y localStorage, por lo que solo existe en el navegador utilizado.
 
-**5:15 — Errores.** Mostrar el mensaje/reintento si falla Internet. Explicar que no se reemplazan los feriados por datos inventados y que el formulario local sigue funcionando.
+## Conceptos de React que debo explicar
 
-**6:00 — Cierre.** Mostrar pruebas/build, procedencia del commit y uso de IA. Explicar límites y Git Flow real realizado por el estudiante, sin inventar evidencias.
+**Componentes:** son partes reutilizables de la interfaz. Por ejemplo, `BookingFlow` coordina `ServiceSelector`, `DateSelector`, `TimeSelector` y `CustomerForm`.
 
-## Preguntas técnicas
+**Props:** son valores o funciones que un componente padre entrega a un componente hijo. Se usan para mostrar la selección actual y avisar cuando el usuario elige una opción.
 
-**¿Qué se reutilizó y qué se construyó para este taller?**  
-El frontend histórico b1aa52c conserva el diseño y las reglas locales. Esta adaptación aísla almacenamiento, integra feriados v4 con hook/componente/servicio y añade documentación y pruebas.
+**useState:** mantiene información que cambia en pantalla, como el paso actual, el servicio elegido o el estado de carga de la API.
 
-**¿Dónde se usan componentes y props?**  
-BookingFlow coordina ServiceSelector, DateSelector, TimeSelector, CustomerForm y BookingSummary mediante valores y callbacks. HolidayNotice recibe estado, feriados, fecha y callback de reintento; se reutiliza en fechas y Agenda.
+**useEffect:** ejecuta tareas externas después del render. En este proyecto inicia la consulta de feriados cuando cambian los años requeridos y cancela consultas antiguas al desmontar el componente.
 
-**¿Por qué useState y useEffect?**  
-useState guarda selecciones y estado de consulta. useEffect ejecuta un efecto externo al cambiar los años o el intento; su limpieza cancela una consulta antigua para que no sobrescriba la vigente.
+## Fetch y Nager.Holidays
 
-**¿Qué hace Fetch?**  
-Solicita JSON real por HTTPS, verifica `response.ok`, valida estructura/fechas y transforma el resultado. La UI no recibe el JSON sin validar.
+La aplicación consulta:
 
-**¿Qué feriados se muestran?**  
-País CL, nacionales y tipo Public. No confundir un feriado regional con uno aplicable a todo Chile. Se muestran nombres originales, no inventados.
+```text
+https://nagerholidays.com/api/v4/Holidays/CL/{year}
+```
 
-**¿Por qué no se bloquea el feriado?**  
-La API informa; los horarios y bloqueos locales deciden disponibilidad. El profesional puede trabajar un feriado.
+El servicio verifica la respuesta, filtra feriados nacionales públicos y transforma los datos para el calendario. Una función centralizada muestra nombres en español de Chile. Si la consulta falla, se ofrece reintentar, pero la reserva local sigue disponible.
 
-**¿Cómo se evita una consulta excesiva?**  
-Caché en memoria por año durante cinco minutos; no se consulta por cada render. StrictMode puede iniciar y cancelar un efecto adicional en desarrollo. Reintentar invalida la caché.
+## ¿Para qué se usa localStorage?
 
-**¿Qué ocurre con respuesta vacía, lenta o inválida?**  
-Vacía tiene mensaje propio; el límite es diez segundos; HTTP fallido/JSON inválido muestran error y reintento. No bloquean reservas.
+Se usa para conservar solicitudes, agenda y configuraciones al recargar la página. Es apropiado para esta demostración porque el taller no requiere backend, pero no reemplaza una base de datos: no sincroniza equipos y el usuario puede borrar su contenido.
+
+## Limitaciones que debo reconocer
+
+- No hay autenticación ni control de acceso.
+- Los datos quedan en un solo navegador.
+- No existe base de datos ni trabajo multiusuario.
+- La API de feriados depende de Internet.
+- No hay pagos, mensajería ni reservas comerciales reales.
+
+## Recorrido sugerido para presentar
+
+1. Mostrar el perfil público y seleccionar un servicio.
+2. Elegir fecha y explicar el feriado obtenido por Fetch.
+3. Mostrar la validación del formulario.
+4. Enviar una solicitud ficticia.
+5. Abrir Solicitudes, confirmarla y verla en Agenda.
+6. Recargar para demostrar la persistencia local.
+7. Mostrar brevemente el servicio de feriados y una prueba.
+
+## Preguntas probables
+
+**¿Por qué usaron React?**  
+Porque permite separar la interfaz en componentes y actualizar solo lo que cambia mediante estado.
 
 **¿Qué es un formulario controlado?**  
-El valor vive en estado React y `onChange` lo actualiza. El teléfono requiere los ocho dígitos restantes del prefijo chileno; el usuario revisa antes de enviar.
+Es un formulario cuyos valores viven en el estado de React. Cada `onChange` actualiza ese estado y permite validar antes de enviar.
 
-**¿Dónde persiste una reserva?**  
-En el repositorio local mediante los servicios históricos y claves `barberbook-taller-2:*`. Recargar no la elimina, pero cambiar de navegador/origen no comparte esos datos.
+**¿Qué diferencia hay entre props y estado?**  
+Las props llegan desde otro componente. El estado pertenece al componente que lo administra y cambia mediante sus funciones de actualización.
 
-**¿Hay backend o seguridad real?**  
-No. El panel es demostrativo y abierto. No es apto para almacenar información real ni operar comercialmente.
+**¿Qué hace useEffect en este proyecto?**  
+Coordina la consulta externa de feriados cuando cambia el año requerido y limpia consultas que ya no son necesarias.
 
-**¿Por qué keys en listas?**  
-React necesita identidad estable de cada elemento. Servicios usan id y feriados normalizados usan fecha, después de agrupar duplicados.
+**¿Cómo manejan errores de la API?**  
+Se comprueba la respuesta y el JSON. La interfaz muestra un mensaje y un botón para reintentar. La reserva no se bloquea.
 
-**¿Bootstrap reemplaza el diseño?**  
-No: solo utilidades en el aviso académico. Los componentes conservan CSS y tokens Oficio cercano.
+**¿Por qué un feriado no bloquea la fecha?**  
+Porque la API solo informa el feriado. La decisión de atender corresponde al horario configurado por el profesional.
 
-**¿Qué se prueba?**  
-Reglas locales históricas y siete casos nuevos de API: endpoint, filtro/normalización, vacío, datos inválidos, fallos, reintento y cancelación/rango.
+**¿Cómo se guardan las reservas?**  
+En localStorage mediante servicios del proyecto. Al recargar se leen nuevamente, pero no se comparten con otros dispositivos.
 
-**¿Qué hizo la IA y qué hiciste tú?**  
-Declarar honestamente la asistencia documentada. Añadir únicamente revisiones, cambios y aprendizajes que realmente hayas realizado; practicar explicando el código, no memorizando una autoría ficticia.
+**¿Por qué no hay backend?**  
+Porque el alcance del Taller 2 es demostrar frontend con React, formularios, datos locales y consumo de una API pública.
 
-## Checklist antes de entregar
+**¿Qué ocurre si el nombre de un feriado no tiene traducción confirmada?**  
+Se mantiene el nombre original. No se generan traducciones automáticas ni se modifica el JSON recibido.
+
+**¿Qué hizo la IA?**  
+Apoyó la adaptación del frontend, la creación de datos ficticios, la integración de la API, las pruebas y la documentación. El estudiante debe revisar el resultado y ser capaz de explicar el código.
+
+## Antes de entregar
 
 - Completar integrantes reales en README.
-- Revisar el diseño y explicar al menos un componente y el hook sin ayuda.
-- Crear repositorio académico separado y evidencia Git Flow auténtica.
-- Confirmar con el docente la reutilización declarada de código previo.
-- Llevar copia del proyecto; las reservas funcionan sin API, pero los feriados reales requieren Internet.
+- Revisar personalmente documentos y código.
+- Practicar el recorrido con datos ficticios.
+- Crear evidencia Git Flow real en el repositorio académico.
+- No afirmar tareas o aprendizajes que no se hayan realizado.

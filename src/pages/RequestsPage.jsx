@@ -42,6 +42,7 @@ function RequestsPage({
     }
   }, [initialFocus, onFocusConsumed])
 
+  // Separa las solicitudes pendientes de rechazadas e históricas.
   const upcomingRequests = useMemo(
     () => getCurrentPendingRequests(requests, requestContext),
     [requests],
@@ -127,6 +128,7 @@ function RequestsPage({
   }
 
   const selectView = (view) => {
+    // Al cambiar de pestaña se elimina el filtro recibido desde Agenda.
     setFocusedSlot(null)
     setActiveView(view)
     setActiveFilter('all')
