@@ -1,5 +1,35 @@
 export const HOLIDAY_API = 'https://nagerholidays.com/api/v4/Holidays/CL'
 
+// Relaciona los nombres exactos de Nager.Holidays con sus nombres oficiales en Chile.
+const NOMBRES_FERIADOS_CHILE = Object.freeze({
+  "New Year's Day": 'Año Nuevo',
+  'Good Friday': 'Viernes Santo',
+  'Holy Saturday': 'Sábado Santo',
+  'Labour Day': 'Día Nacional del Trabajo',
+  'Navy Day': 'Día de las Glorias Navales',
+  'Battle of Arica': 'Asalto y Toma del Morro de Arica',
+  'National Day of Indigenous Peoples': 'Día Nacional de los Pueblos Indígenas',
+  'Saint Peter and Saint Paul': 'San Pedro y San Pablo',
+  'Our Lady of Mount Carmel': 'Día de la Virgen del Carmen',
+  'Assumption of Mary': 'Asunción de la Virgen',
+  'National holiday': 'Independencia Nacional',
+  'Army Day': 'Día de las Glorias del Ejército',
+  'Columbus Day': 'Encuentro de Dos Mundos',
+  'Reformation Day': 'Día de las Iglesias Evangélicas y Protestantes',
+  'All Saints Day': 'Día de Todos los Santos',
+  'Immaculate Conception': 'Inmaculada Concepción',
+  'Christmas Day': 'Navidad',
+})
+
+export function obtenerNombreFeriadoChile(feriadoApi) {
+  const nombreOriginal = typeof feriadoApi?.name === 'string' ? feriadoApi.name.trim() : ''
+  const nombreTraducido = NOMBRES_FERIADOS_CHILE[nombreOriginal]
+  if (nombreTraducido) return nombreTraducido
+
+  const nombreLocal = typeof feriadoApi?.localName === 'string' ? feriadoApi.localName.trim() : ''
+  return nombreLocal || nombreOriginal
+}
+
 export function normalizarFeriados(payload, anio) {
   if (!Array.isArray(payload)) throw new Error('Respuesta de feriados inválida.')
   const feriadosPorFecha = new Map()
@@ -22,7 +52,7 @@ export function normalizarFeriados(payload, anio) {
     // Un feriado regional o bancario no representa un feriado público nacional.
     if (!feriadoApi.nationalHoliday || !feriadoApi.holidayTypes.includes('Public')) continue
     const nombres = feriadosPorFecha.get(feriadoApi.date) ?? new Set()
-    nombres.add(feriadoApi.name.trim())
+    nombres.add(obtenerNombreFeriadoChile(feriadoApi))
     feriadosPorFecha.set(feriadoApi.date, nombres)
   }
 
