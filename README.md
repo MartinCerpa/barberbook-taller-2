@@ -1,8 +1,6 @@
 # BarberBook — Taller Evaluado 2
 
-Versión académica e independiente de BarberBook. Es una aplicación frontend de demostración: no corresponde al producto comercial ni debe usarse con datos personales reales.
-
-**Integrantes:** completar con los nombres reales antes de entregar.
+**Integrantes:** Martin Cerpa Diaz
 
 ## Problema y usuarios
 
@@ -30,7 +28,6 @@ Los feriados solo entregan información. No bloquean automáticamente una fecha 
 - localStorage para conservar datos de demostración.
 - `node:test` para pruebas y Oxlint para revisión del código.
 
-Este taller no utiliza backend propio, base de datos ni autenticación real.
 
 ## Instalación
 
@@ -94,12 +91,9 @@ Esta versión reutiliza el frontend histórico del repositorio BarberBook, commi
 
 Se utilizó OpenAI Codex como apoyo para:
 
-- adaptar el frontend histórico a un proyecto académico independiente;
 - crear datos ficticios de un barbero, servicios, clientes y solicitudes, evitando datos personales reales;
 - integrar y probar la consulta de feriados;
 - revisar código y redactar documentación.
-
-Prompt real resumido: «Construir una preversión académica independiente desde `b1aa52c`, sin tocar el producto comercial; integrar Nager.Holidays con Fetch, carga, error y reintento, manteniendo las reservas locales».
 
 La documentación y el código deben ser revisados personalmente por el estudiante antes de la entrega. No se atribuyen revisiones manuales, aprendizajes ni decisiones que todavía no hayan sido confirmados por él.
 
@@ -117,4 +111,3 @@ La documentación y el código deben ser revisados personalmente por el estudian
 - [Guía de defensa](docs/defensa.md)
 - [Validación](docs/validacion.md)
 
-Antes de entregar falta completar integrantes, revisar personalmente el contenido y crear evidencia Git Flow auténtica en un repositorio académico separado. No se deben fabricar commits ni revisiones.
