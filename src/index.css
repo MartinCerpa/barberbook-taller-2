@@ -1,0 +1,5 @@
+@import './styles/tokens.css';
+@import './styles/global.css';
+@import './styles/public-barber.css';
+@import './styles/booking.css';
+@import './styles/admin.css';
