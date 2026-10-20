@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { createBooking, createBookingId } from '../../services/bookingService.js'
+import {
+  createBooking as crearReserva,
+  createBookingId as crearIdReserva,
+} from '../../services/bookingService.js'
 import {
   getEffectiveBookingTimeSlotsForDate,
   getPublicBookingDates,
@@ -13,7 +16,7 @@ import DateSelector from './DateSelector'
 import ServiceSelector from './ServiceSelector'
 import TimeSelector from './TimeSelector'
 
-const initialBooking = {
+const reservaInicial = {
   serviceId: '',
   dateId: '',
   time: '',
@@ -23,159 +26,162 @@ const initialBooking = {
   },
 }
 
-const SELECTION_FEEDBACK_MS = 150
+const ESPERA_SELECCION_MS = 150
 
-const prefersReducedMotion = () =>
+const prefiereMovimientoReducido = () =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 function BookingFlow({ services, onExit }) {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [booking, setBooking] = useState(initialBooking)
-  const [selectionFeedback, setSelectionFeedback] = useState(null)
-  const submissionId = useRef(null)
-  const submitting = useRef(false)
-  const advanceTimer = useRef(null)
-  const flowContentRef = useRef(null)
-  const previousStep = useRef(0)
-  const [submissionError, setSubmissionError] = useState(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submittedBooking, setSubmittedBooking] = useState(null)
-  const [, refreshAvailability] = useState(0)
-  useEffect(() => subscribeAvailability(() => refreshAvailability((value) => value + 1)), [])
-  const dates = getPublicBookingDates()
-  const slots = booking.dateId ? getEffectiveBookingTimeSlotsForDate(booking.dateId) : []
-  const selectedService = services.find(
-    (service) => service.id === booking.serviceId,
+  const [etapaActual, setEtapaActual] = useState(0)
+  const [reserva, setReserva] = useState(reservaInicial)
+  const [mensajeSeleccion, setMensajeSeleccion] = useState(null)
+  const idEnvio = useRef(null)
+  const enviandoRef = useRef(false)
+  const temporizadorAvance = useRef(null)
+  const contenidoFlujoRef = useRef(null)
+  const etapaAnteriorRef = useRef(0)
+  const [errorEnvio, setErrorEnvio] = useState(null)
+  const [estaEnviando, setEstaEnviando] = useState(false)
+  const [reservaEnviada, setReservaEnviada] = useState(null)
+  const [, refrescarDisponibilidad] = useState(0)
+  useEffect(() => subscribeAvailability(() => refrescarDisponibilidad((valor) => valor + 1)), [])
+  const fechas = getPublicBookingDates()
+  const horarios = reserva.dateId ? getEffectiveBookingTimeSlotsForDate(reserva.dateId) : []
+  const servicioSeleccionado = services.find(
+    (servicio) => servicio.id === reserva.serviceId,
   )
-  const selectedSlot = slots.find((slot) => slot.time === booking.time)
+  const horarioSeleccionado = horarios.find((horario) => horario.time === reserva.time)
 
-  useEffect(() => () => window.clearTimeout(advanceTimer.current), [])
+  useEffect(() => () => window.clearTimeout(temporizadorAvance.current), [])
 
   useEffect(() => {
-    if (previousStep.current === currentStep) return
-    previousStep.current = currentStep
+    if (etapaAnteriorRef.current === etapaActual) return
+    etapaAnteriorRef.current = etapaActual
 
-    const focusFrame = window.requestAnimationFrame(() => {
-      const heading = flowContentRef.current?.querySelector('h1')
-      if (!heading) return
-      heading.setAttribute('tabindex', '-1')
-      heading.focus({ preventScroll: true })
+    const cuadroFoco = window.requestAnimationFrame(() => {
+      const titulo = contenidoFlujoRef.current?.querySelector('h1')
+      if (!titulo) return
+      titulo.setAttribute('tabindex', '-1')
+      titulo.focus({ preventScroll: true })
     })
 
-    return () => window.cancelAnimationFrame(focusFrame)
-  }, [currentStep])
+    return () => window.cancelAnimationFrame(cuadroFoco)
+  }, [etapaActual])
 
-  const scrollToFlowStart = () => {
+  const desplazarAlInicio = () => {
     window.scrollTo({
       top: 0,
-      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      behavior: prefiereMovimientoReducido() ? 'auto' : 'smooth',
     })
   }
 
-  const cancelScheduledAdvance = () => {
-    window.clearTimeout(advanceTimer.current)
-    advanceTimer.current = null
-    setSelectionFeedback(null)
+  const cancelarAvanceProgramado = () => {
+    window.clearTimeout(temporizadorAvance.current)
+    temporizadorAvance.current = null
+    setMensajeSeleccion(null)
   }
 
-  const advanceAfterFeedback = (nextStep, feedback) => {
-    window.clearTimeout(advanceTimer.current)
-    setSelectionFeedback(feedback)
-    const delay = prefersReducedMotion() ? 0 : SELECTION_FEEDBACK_MS
+  const avanzarTrasConfirmacion = (siguienteEtapa, mensaje) => {
+    window.clearTimeout(temporizadorAvance.current)
+    setMensajeSeleccion(mensaje)
+    const espera = prefiereMovimientoReducido() ? 0 : ESPERA_SELECCION_MS
 
-    advanceTimer.current = window.setTimeout(() => {
-      setSelectionFeedback(null)
-      setCurrentStep(nextStep)
-      scrollToFlowStart()
-      advanceTimer.current = null
-    }, delay)
+    temporizadorAvance.current = window.setTimeout(() => {
+      setMensajeSeleccion(null)
+      setEtapaActual(siguienteEtapa)
+      desplazarAlInicio()
+      temporizadorAvance.current = null
+    }, espera)
   }
 
-  const goToStep = (step) => {
-    cancelScheduledAdvance()
-    const dateAvailable = dates.some((date) => date.id === booking.dateId && date.available)
-    const timeAvailable = slots.some((slot) => slot.time === booking.time && slot.isBookable)
+  const irAEtapa = (etapa) => {
+    cancelarAvanceProgramado()
+    const fechaDisponible = fechas.some((fecha) => fecha.id === reserva.dateId && fecha.available)
+    const horarioDisponible = horarios.some((horario) => horario.time === reserva.time && horario.isBookable)
     // Revalida también si los horarios cambian en otra pestaña durante la reserva.
-    const nextStep = step >= 2 && !dateAvailable
+    const siguienteEtapa = etapa >= 2 && !fechaDisponible
       ? 1
-      : step >= 3 && !timeAvailable ? 2 : step
-    setCurrentStep(nextStep)
-    scrollToFlowStart()
+      : etapa >= 3 && !horarioDisponible ? 2 : etapa
+    setEtapaActual(siguienteEtapa)
+    desplazarAlInicio()
   }
 
-  const handleServiceSelection = (serviceId) => {
-    if (selectionFeedback) return
-    const service = services.find((item) => item.id === serviceId)
-    if (!service) return
+  const seleccionarServicio = (serviceId) => {
+    if (mensajeSeleccion) return
+    const servicio = services.find((item) => item.id === serviceId)
+    if (!servicio) return
 
-    setBooking((currentBooking) => {
-      if (currentBooking.serviceId === serviceId) {
-        return currentBooking
+    // Al cambiar de servicio, limpia la fecha y hora dependientes.
+    setReserva((reservaActual) => {
+      if (reservaActual.serviceId === serviceId) {
+        return reservaActual
       }
 
       return {
-        ...currentBooking,
+        ...reservaActual,
         serviceId,
         dateId: '',
         time: '',
       }
     })
-    advanceAfterFeedback(1, `Seleccionaste ${service.name}`)
+    avanzarTrasConfirmacion(1, `Seleccionaste ${servicio.name}`)
   }
 
-  const handleDateSelection = (dateId) => {
-    if (selectionFeedback) return
-    const date = dates.find((item) => item.id === dateId && item.available)
-    if (!date) return
+  const seleccionarFecha = (dateId) => {
+    if (mensajeSeleccion) return
+    const fecha = fechas.find((item) => item.id === dateId && item.available)
+    if (!fecha) return
 
-    setBooking((currentBooking) => ({
-      ...currentBooking,
+    // Guarda la fecha elegida y limpia la hora si pertenece a otro día.
+    setReserva((reservaActual) => ({
+      ...reservaActual,
       dateId,
-      time: currentBooking.dateId === dateId ? currentBooking.time : '',
+      time: reservaActual.dateId === dateId ? reservaActual.time : '',
     }))
-    advanceAfterFeedback(2, 'Fecha seleccionada')
+    avanzarTrasConfirmacion(2, 'Fecha seleccionada')
   }
 
-  const handleTimeSelection = (time) => {
-    if (selectionFeedback) return
-    const slot = slots.find((item) => item.time === time && item.isBookable)
-    if (!slot) return
+  const seleccionarHorario = (time) => {
+    if (mensajeSeleccion) return
+    const horario = horarios.find((item) => item.time === time && item.isBookable)
+    if (!horario) return
 
-    setBooking((currentBooking) => ({ ...currentBooking, time }))
-    advanceAfterFeedback(3, `Horario ${time} seleccionado`)
+    setReserva((reservaActual) => ({ ...reservaActual, time }))
+    avanzarTrasConfirmacion(3, `Horario ${time} seleccionado`)
   }
 
-  const submitBooking = async () => {
-    if (submitting.current) return
-    submitting.current = true
-    setIsSubmitting(true)
-    setSubmissionError(null)
-    submissionId.current ??= createBookingId()
+  const enviarReserva = async () => {
+    if (enviandoRef.current) return
+    enviandoRef.current = true
+    setEstaEnviando(true)
+    setErrorEnvio(null)
+    idEnvio.current ??= crearIdReserva()
     try {
-      const result = await createBooking({ ...booking, id: submissionId.current })
-      if (!result.success) {
-        setSubmissionError(result.error)
+      // Persiste la solicitud solo después de revisar todos los datos.
+      const resultado = await crearReserva({ ...reserva, id: idEnvio.current })
+      if (!resultado.success) {
+        setErrorEnvio(resultado.error)
         return
       }
-      setSubmittedBooking(result.booking)
-      setCurrentStep(5)
-      scrollToFlowStart()
+      setReservaEnviada(resultado.booking)
+      setEtapaActual(5)
+      desplazarAlInicio()
     } catch {
-      setSubmissionError('No pudimos enviar tu solicitud. Inténtalo de nuevo.')
+      setErrorEnvio('No pudimos enviar tu solicitud. Inténtalo de nuevo.')
     } finally {
-      submitting.current = false
-      setIsSubmitting(false)
+      enviandoRef.current = false
+      setEstaEnviando(false)
     }
   }
 
-  if (currentStep === 5) {
+  if (etapaActual === 5) {
     return (
       <section className="booking-section" id="inicio">
-        <div className="container booking-shell" ref={flowContentRef}>
+        <div className="container booking-shell" ref={contenidoFlujoRef}>
           <BookingSuccess
-            booking={booking}
-            submittedBooking={submittedBooking}
-            service={selectedService}
+            booking={reserva}
+            submittedBooking={reservaEnviada}
+            service={servicioSeleccionado}
             onReturn={onExit}
           />
         </div>
@@ -185,7 +191,7 @@ function BookingFlow({ services, onExit }) {
 
   return (
     <section className="booking-section" id="inicio">
-      <div className="container booking-shell" ref={flowContentRef}>
+      <div className="container booking-shell" ref={contenidoFlujoRef}>
         <div className="booking-topbar">
           <button type="button" onClick={onExit}>
             <span aria-hidden="true">←</span>
@@ -194,60 +200,60 @@ function BookingFlow({ services, onExit }) {
           <span>Solicitud de reserva</span>
         </div>
 
-        <BookingProgress currentStep={currentStep} onNavigate={goToStep} />
+        <BookingProgress currentStep={etapaActual} onNavigate={irAEtapa} />
 
         <div className="booking-card">
-          {currentStep === 0 && (
+          {etapaActual === 0 && (
             <ServiceSelector
               services={services}
-              selectedId={booking.serviceId}
-              onSelect={handleServiceSelection}
+              selectedId={reserva.serviceId}
+              onSelect={seleccionarServicio}
               onBack={onExit}
-              feedback={selectionFeedback}
+              feedback={mensajeSeleccion}
             />
           )}
 
-          {currentStep === 1 && (
+          {etapaActual === 1 && (
             <DateSelector
-              dates={dates}
-              selectedId={booking.dateId}
-              onSelect={handleDateSelection}
-              onBack={() => goToStep(0)}
-              feedback={selectionFeedback}
+              dates={fechas}
+              selectedId={reserva.dateId}
+              onSelect={seleccionarFecha}
+              onBack={() => irAEtapa(0)}
+              feedback={mensajeSeleccion}
             />
           )}
 
-          {currentStep === 2 && (
+          {etapaActual === 2 && (
             <TimeSelector
-              slots={slots.map((slot) => ({ ...slot, status: slot.bookingStatus }))}
-              selectedTime={booking.time}
-              onSelect={handleTimeSelection}
-              onBack={() => goToStep(1)}
-              feedback={selectionFeedback}
+              slots={horarios.map((horario) => ({ ...horario, status: horario.bookingStatus }))}
+              selectedTime={reserva.time}
+              onSelect={seleccionarHorario}
+              onBack={() => irAEtapa(1)}
+              feedback={mensajeSeleccion}
             />
           )}
 
-          {currentStep === 3 && (
+          {etapaActual === 3 && (
             <CustomerForm
-              customer={booking.customer}
-              hasPendingRequests={selectedSlot?.bookingStatus === 'pending'}
+              customer={reserva.customer}
+              hasPendingRequests={horarioSeleccionado?.bookingStatus === 'pending'}
               onChange={(customer) =>
-                setBooking((currentBooking) => ({ ...currentBooking, customer }))
+                setReserva((reservaActual) => ({ ...reservaActual, customer }))
               }
-              onBack={() => goToStep(2)}
-              onNext={() => goToStep(4)}
+              onBack={() => irAEtapa(2)}
+              onNext={() => irAEtapa(4)}
             />
           )}
 
-          {currentStep === 4 && (
-            <div aria-busy={isSubmitting}>
-            {submissionError && <p className="form-error" role="alert">{submissionError}</p>}
-            {isSubmitting && <p role="status">Enviando solicitud…</p>}
+          {etapaActual === 4 && (
+            <div aria-busy={estaEnviando}>
+            {errorEnvio && <p className="form-error" role="alert">{errorEnvio}</p>}
+            {estaEnviando && <p role="status">Enviando solicitud…</p>}
             <BookingSummary
-              booking={booking}
-              service={selectedService}
-              onBack={() => goToStep(3)}
-              onSubmit={submitBooking}
+              booking={reserva}
+              service={servicioSeleccionado}
+              onBack={() => irAEtapa(3)}
+              onSubmit={enviarReserva}
             />
             </div>
           )}

@@ -1,31 +1,38 @@
 # BarberBook — Taller Evaluado 2
 
-Preversión académica independiente, exclusivamente frontend. No es el producto comercial ni un sistema de reservas en producción.
+Versión académica e independiente de BarberBook. Es una aplicación frontend de demostración: no corresponde al producto comercial ni debe usarse con datos personales reales.
 
-**Integrantes:** completar con los integrantes reales antes de entregar. No se ha inventado participación, revisión humana ni historial Git.
+**Integrantes:** completar con los nombres reales antes de entregar.
 
 ## Problema y usuarios
 
-Las solicitudes por mensajes dispersos dificultan organizar una barbería. El cliente necesita elegir un servicio y solicitar una hora; el profesional necesita revisar solicitudes y consultar su jornada. Esta demostración integra ambos recorridos en un mismo navegador.
+BarberBook organiza solicitudes de horas que normalmente se coordinan mediante mensajes. El cliente puede elegir un servicio, fecha y horario. El profesional puede revisar la solicitud y verla en su agenda después de confirmarla.
 
-## Funcionalidades
+## Funcionalidades principales
 
-- Perfil público de demostración y diseño «Oficio cercano», claro/oscuro.
-- Selección de servicio, fecha y horario; avance automático y posibilidad de volver.
-- Formulario controlado: nombre y ocho dígitos después del prefijo +56 9.
-- Resumen y envío explícito; confirmación/rechazo desde el panel demostrativo.
-- Agenda, servicios y configuración local heredados de la base histórica.
-- Persistencia en localStorage con claves exclusivas `barberbook-taller-2:*` y `barberbook-taller-2-theme`.
-- Feriados nacionales de Chile consultados realmente desde Nager.Holidays, tanto en fechas como en Agenda.
-- Un feriado es informativo: **no cierra automáticamente la barbería**.
+- Perfil público ficticio de un profesional.
+- Reserva por servicio, fecha y horario.
+- Formulario controlado con validación de nombre y teléfono chileno.
+- Consulta de feriados de Chile mediante Nager.Holidays.
+- Envío, confirmación y rechazo de solicitudes.
+- Agenda y panel profesional de demostración.
+- Persistencia local al recargar la página.
+- Diseño responsive y temas claro/oscuro.
+
+Los feriados solo entregan información. No bloquean automáticamente una fecha porque el profesional podría trabajar ese día.
 
 ## Tecnologías
 
-React 19, JavaScript/JSX, Vite 8, CSS responsive, utilidades de Bootstrap 5.3, Fetch, localStorage, pruebas `node:test` y Oxlint. Bootstrap se usa en el aviso académico, importando solo sus utilidades; no reemplaza el diseño ni incorpora su JavaScript.
+- React 19 y JavaScript/JSX.
+- Vite 8.
+- CSS responsive y algunas utilidades de Bootstrap 5.3.
+- Fetch para consultar Nager.Holidays.
+- localStorage para conservar datos de demostración.
+- `node:test` para pruebas y Oxlint para revisión del código.
 
-No incluye Express, PostgreSQL, autenticación real, variables secretas ni backend propio.
+Este taller no utiliza backend propio, base de datos ni autenticación real.
 
-## Instalación y ejecución
+## Instalación
 
 Requisito recomendado: Node.js 24 LTS y npm.
 
@@ -35,114 +42,79 @@ npm ci
 npm run dev
 ```
 
-Abrir http://localhost:5174. El puerto es fijo para no interferir con el producto comercial. Usar siempre el mismo host: `localhost` y `127.0.0.1` tienen almacenamientos diferentes.
+La aplicación queda disponible en `http://localhost:5174`.
 
-```text
+Otros comandos:
+
+```powershell
 npm test
 npm run lint
 npm run build
 npm run preview
 ```
 
-Preview: http://localhost:4174. `dist/` es el resultado estático; no abrir `index.html` directamente mediante `file://`.
-
-## Estructura
+## Estructura principal
 
 ```text
 src/
-  components/booking/  pasos del formulario público
-  components/admin/    tarjetas y controles del panel
-  components/HolidayNotice.jsx  información reutilizable de feriados
-  hooks/useHolidays.js          carga, caché, cancelación y reintento
-  pages/                perfil público y páginas del panel
-  data/                 datos ficticios iniciales
-  models/               documentación de formas de datos
-  services/             reglas y acceso a datos
-  services/bookingRepository.js almacenamiento local de reservas
-  services/holidayService.js    Fetch y validación de la API
-  styles/               sistema visual y adaptación académica
+  components/booking/  pasos de la reserva
+  components/admin/    componentes del panel
+  hooks/                carga de feriados
+  pages/                perfil y páginas del panel
+  data/                 datos ficticios
+  services/             reservas, almacenamiento y API
+  styles/               estilos responsive
 tests/                  pruebas de lógica
 docs/                   diseño, defensa y validación
 ```
 
-La navegación utiliza hash, no rutas de servidor: `#inicio`, `#/panel/requests`, `#/panel/schedule`. El panel es abierto deliberadamente para la evaluación.
+La navegación usa hash, por ejemplo `#inicio`, `#/panel/requests` y `#/panel/schedule`.
 
-## API pública: Nager.Holidays
+## API pública
 
-Documentación: https://nagerholidays.com/api
-
-Endpoint verificado:
+Se utiliza [Nager.Holidays](https://nagerholidays.com/api) mediante:
 
 ```text
 GET https://nagerholidays.com/api/v4/Holidays/CL/{year}
 ```
 
-Ejemplo real: https://nagerholidays.com/api/v4/Holidays/CL/2026
+La aplicación consulta el año necesario, valida el JSON y conserva solamente feriados nacionales de Chile de tipo público. Los nombres se presentan en español mediante una tabla explícita de equivalencias; si un nombre no tiene traducción confirmada, se conserva el original.
 
-Se consulta el año de la fecha seleccionada en Agenda y los años visibles en el selector público, incluyendo el cruce diciembre/enero. No se envían nombres, teléfonos, cookies ni reservas. No requiere clave.
+Mientras se consulta se muestra un estado de carga. Si ocurre un error, aparece una opción de reintento y la reserva sigue funcionando. No se envían a la API nombres, teléfonos ni reservas.
 
-Se valida que la respuesta sea un arreglo y que cada elemento tenga fecha válida del año pedido, país CL, nombre, `nationalHoliday` booleano y `holidayTypes` como arreglo de cadenas. Solo se presentan feriados nacionales (`nationalHoliday === true`) de tipo `Public`. Se agrupan fechas repetidas, se ordenan y se transforman a `{ date, name }`. Los feriados regionales no se presentan como nacionales.
+## Datos y persistencia
 
-Los nombres se muestran tal como los entrega la API, actualmente en inglés. No se inventan traducciones ni feriados. La lista desplegable permite demostrar la integración aunque no exista un feriado dentro del horizonte de reservas.
+Los datos del profesional, servicios y clientes son ficticios. Se guardan localmente con claves propias de este proyecto, por lo que existen solo en el navegador y origen utilizados. Cambiar de navegador o limpiar localStorage elimina esa información.
 
-### Carga y errores
+## Procedencia del proyecto
 
-`useEffect` inicia la consulta; `useState` mantiene carga/error/resultado/reintento. Hay cancelación al desmontar, tiempo máximo de 10 segundos y caché exitosa en memoria de 5 minutos por año. El reintento invalida esa caché.
-
-Un fallo HTTP, de red o JSON inválido muestra un mensaje y «Reintentar consulta». Una respuesta vacía muestra un estado específico. No se usan datos ficticios como respaldo. La disponibilidad local sigue operativa incluso si la API falla. Las respuestas artificiales de los tests son exclusivamente fixtures de prueba.
-
-Uso exclusivamente académico; revisar las condiciones vigentes del proveedor antes de cualquier reutilización comercial.
-
-## Procedencia y cambios académicos
-
-Base reutilizada: https://github.com/MartinCerpa/BarberBook, commit `b1aa52c`.
-
-Se extrajeron únicamente frontend, assets disponibles, pruebas y configuración de ejecución. Se conservaron componentes y reglas locales históricas. No se copió `.git`, `.env`, backend, migraciones ni almacenamiento del navegador comercial. Los registros iniciales son demostrativos.
-
-Adaptaciones: namespace local independiente, identificación académica, integración Nager.Holidays, pruebas de la API, puerto independiente, utilidades Bootstrap y documentación. Se quitaron enlaces sociales ficticios y referencias a imágenes inexistentes; se conservan fallbacks visuales.
+Esta versión reutiliza el frontend histórico del repositorio BarberBook, commit `b1aa52c`. Se conservaron componentes, estilos y reglas locales. No se copiaron backend, base de datos, variables de entorno ni historial Git del producto comercial.
 
 ## Uso de Inteligencia Artificial
 
-Herramienta: OpenAI Codex. Uso: recuperación de frontend histórico, aislamiento de almacenamiento, implementación de consulta de feriados, pruebas y redacción de documentación.
+Se utilizó OpenAI Codex como apoyo para:
 
-Prompt principal resumido: «Construir una preversión académica independiente desde b1aa52c, sin tocar el producto comercial; integrar Nager.Holidays con Fetch, carga/error/reintento y mantener reservas locales».
+- adaptar el frontend histórico a un proyecto académico independiente;
+- crear datos ficticios de un barbero, servicios, clientes y solicitudes, evitando datos personales reales;
+- integrar y probar la consulta de feriados;
+- revisar código y redactar documentación.
 
-Resultado: código y documentación de esta carpeta, más las validaciones descritas en `docs/validacion.md`. Las decisiones de aislamiento, filtro nacional y ausencia de bloqueo por feriados corresponden al alcance solicitado.
+Prompt real resumido: «Construir una preversión académica independiente desde `b1aa52c`, sin tocar el producto comercial; integrar Nager.Holidays con Fetch, carga, error y reintento, manteniendo las reservas locales».
 
-**Pendiente del estudiante:** revisar el código, registrar sus modificaciones reales y explicar lo aprendido. No se afirma que esa revisión o aprendizaje ya ocurrió. El guion ayuda a prepararse, no sustituye la defensa individual.
+La documentación y el código deben ser revisados personalmente por el estudiante antes de la entrega. No se atribuyen revisiones manuales, aprendizajes ni decisiones que todavía no hayan sido confirmados por él.
 
-## Limitaciones y pendientes académicos
+## Limitaciones
 
-- Datos y panel demostrativos sin control de acceso. No ingresar información real.
-- Persistencia solo en este navegador/origen; no hay sincronización ni garantías multiusuario.
-- El reloj del dispositivo determina fechas y expiración. Los horarios base son de demostración.
-- El identificador telefónico local heredado no representa un diseño de identidad apto para producción.
-- API externa dependiente de Internet/CORS; no existe copia offline de feriados.
-- No se envían mensajes, se cobran pagos ni se generan reservas comerciales.
-- No se amplió Finanzas; las vistas heredadas no son evidencia de pagos reales.
-- Faltan integrantes definitivos, revisión humana y evidencias Git Flow reales.
+- No existe backend, cuenta de usuario ni seguridad real.
+- El panel está abierto y solo sirve para demostración.
+- La información no se sincroniza entre dispositivos.
+- Los feriados requieren Internet; las reservas locales no.
+- No se envían mensajes, se procesan pagos ni se crean reservas comerciales.
 
-## Entrega y defensa
+## Documentos de apoyo
 
-Consultar [diseño](docs/diseno.md), [guion y preguntas técnicas](docs/defensa.md) y [validaciones](docs/validacion.md).
+- [Diseño](docs/diseno.md)
+- [Guía de defensa](docs/defensa.md)
+- [Validación](docs/validacion.md)
 
-### Publicar en un repositorio separado (lo hace el estudiante)
-
-No se ejecutaron operaciones de escritura Git. Primero verificar que se está dentro de **barberbook-taller-2**, nunca dentro del producto comercial. Crear manualmente un repositorio vacío diferente en GitHub.
-
-Secuencia orientativa para ejecutar después de revisar:
-
-```text
-git init -b main
-git add .
-git commit -m "Entrega base académica Taller 2"
-git remote add origin URL_DEL_NUEVO_REPOSITORIO
-git push -u origin main
-git switch -c develop
-git push -u origin develop
-git switch -c feature/revision-academica
-```
-
-Realizar cambios auténticos en esa feature, comprobarlos, hacer commits descriptivos y abrir PR hacia develop; luego preparar la entrega a main. No fabricar commits, fechas ni revisiones anteriores. El historial comercial no se importó. El nombre de rama por sí solo no prueba Git Flow.
-
-Para hosting estático, publicar `dist/` generado por build (por ejemplo mediante un workflow de GitHub Pages creado posteriormente). La configuración `base: './'` y navegación hash permiten alojar bajo una subcarpeta. No subir `node_modules`, `.env` ni datos personales.
+Antes de entregar falta completar integrantes, revisar personalmente el contenido y crear evidencia Git Flow auténtica en un repositorio académico separado. No se deben fabricar commits ni revisiones.

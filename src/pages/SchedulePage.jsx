@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import HolidayNotice from '../components/HolidayNotice'
-import useHolidays from '../hooks/useHolidays'
+import useFeriados from '../hooks/useHolidays'
 import ScheduleItem from '../components/admin/ScheduleItem'
 import { getUnfinishedAppointmentDates } from '../services/bookingService'
 import { getDailyOperationsSummary } from '../services/bookingInsightsService.js'
@@ -47,7 +47,8 @@ function SchedulePage({
   const [availabilityFeedback, setAvailabilityFeedback] = useState(null)
   const referenceDateId = bookingDates[0]?.id
   const dateLabel = selectedDateId ? formatRequestDateId(selectedDateId) : ''
-  const holidays = useHolidays([selectedDateId])
+  // Los feriados complementan la agenda sin modificar la disponibilidad.
+  const estadoFeriados = useFeriados([selectedDateId])
   const dayRequests = getAvailabilityRequestsForDate(selectedDateId, requests)
   const pendingRequestsByTime = dayRequests.reduce((requestsByTime, request) => {
     if (request.status !== 'pending') {
@@ -68,6 +69,7 @@ function SchedulePage({
   } = getDailyOperationsSummary(timelineItems, selectedDateId)
 
   const updateAvailability = (slot) => {
+    // Aplica un bloqueo o habilitación solo a la fecha seleccionada.
     const result = availabilityActions[slot.action]?.(selectedDateId, slot.time, dayRequests)
 
     if (!result?.success) {
@@ -90,6 +92,7 @@ function SchedulePage({
   }
 
   const confirmPendingRequest = async (request) => {
+    // Una solicitud confirmada se incorpora inmediatamente a la agenda.
     const result = await onConfirmRequest(request.id)
 
     if (!result?.success) {
@@ -204,11 +207,11 @@ function SchedulePage({
               <span>{date.label}</span>
               <strong>{date.dayNumber}</strong>
               <small>{date.month}</small>
-              {holidays.byDate.has(date.id) && <span className="holiday-badge">Feriado</span>}
+              {estadoFeriados.porFecha.has(date.id) && <span className="holiday-badge">Feriado</span>}
             </button>
           ))}
         </div>
-        <HolidayNotice state={holidays} selectedDateId={selectedDateId} />
+        <HolidayNotice estado={estadoFeriados} fechaSeleccionada={selectedDateId} />
       </section>
 
       <section className="schedule-list" aria-label={`Agenda del ${dateLabel}`}>

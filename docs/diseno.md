@@ -1,63 +1,76 @@
-# Diseño del Taller Evaluado 2
+# Diseño de BarberBook — Taller 2
 
-Esta adaptación académica reutiliza la interfaz histórica «Oficio cercano» de BarberBook, commit `b1aa52c`. Este documento registra el diseño de la integración de feriados antes de implementarla; no pretende ser evidencia anterior a la creación del producto original.
+## Problema identificado
 
-## Problema y usuarios
+Coordinar horas mediante mensajes puede producir respuestas tardías y desorden. BarberBook reúne la solicitud del cliente y la revisión del profesional en una misma aplicación de demostración.
 
-Clientes necesitan solicitar una hora sin intercambiar mensajes repetidos. El profesional necesita revisar solicitudes y organizar su jornada. Los feriados ayudan a planificar la fecha, pero no determinan si la barbería abre.
+## Usuarios
+
+- **Cliente:** necesita elegir un servicio y solicitar una hora de forma clara.
+- **Profesional:** necesita revisar solicitudes y consultar su jornada.
+
+## Objetivo
+
+Demostrar un flujo completo de reserva utilizando React, datos locales y una API pública, sin implementar backend propio.
+
+## Funcionalidades principales
+
+- Perfil público del profesional ficticio.
+- Selección de servicio, fecha y horario.
+- Información de feriados chilenos.
+- Formulario con validación y resumen.
+- Confirmación o rechazo desde el panel.
+- Agenda y persistencia local.
 
 ## Navegación
 
-Perfil público → Servicio → Fecha con feriados → Hora → Datos → Resumen → Solicitud enviada.
-
-Panel demostrativo → Inicio / Solicitudes / Agenda / Clientes / Configuración.
-Desde Solicitudes se confirma o rechaza. Una confirmación se refleja en Agenda. El panel no tiene autenticación y se utiliza exclusivamente con datos ficticios.
-
-## Wireframes de la adaptación
-
 ```text
-Móvil · selección de fecha
-┌─────────────────────────────┐
-│ BarberBook       Tema/Panel │
-│ Demo académica · datos local│
-│ Paso 2 · Elige una fecha    │
-│ Feriados de Chile · año     │
-│ Cargando / error + Reintentar│
-│ [día] [día • feriado] [día] │
-│ Nombre de feriado          │
-│ No modifica disponibilidad │
-│ [Ver feriados del año ▾]    │
-│ [Volver]                   │
-└─────────────────────────────┘
+Perfil → Servicio → Fecha → Hora → Datos → Resumen → Solicitud enviada
 
-Agenda
-┌─────────────────────────────┐
-│ Agenda · fecha seleccionada│
-│ Resumen de jornada         │
-│ Selector horizontal de días│
-│ Feriados · aviso del día    │
-│ 10:00 Cliente · servicio    │
-│ 11:00 Disponible           │
-└─────────────────────────────┘
+Panel → Inicio / Solicitudes / Agenda / Clientes / Configuración
 ```
 
-En escritorio se conservan el ancho máximo y la navegación lateral. En móvil, las fechas siguen siendo compactas y los nombres extensos pueden envolver líneas. El listado anual es desplegable para no saturar el flujo y permitir demostrar la API aunque hoy no sea feriado.
+Una solicitud confirmada pasa a la Agenda. El panel no tiene autenticación porque esta entrega es solo frontend.
 
-## Jerarquía y componentes
+## Wireframes simplificados
 
-- La selección de fecha es la acción principal; los feriados son contexto secundario.
-- `DateSelector` conserva selección y navegación mediante props.
-- `HolidayNotice` presenta carga, error, reintento, vacío y fechas recibidas.
-- `useHolidays` sincroniza React con la API; `holidayService` valida y transforma JSON.
-- `SchedulePage` reutiliza el mismo hook y presentación.
-- `BookingFlow`, formularios, estados locales y repositorio se conservan.
+```text
+Móvil · reserva
+┌──────────────────────────┐
+│ BarberBook         Tema  │
+│ Paso actual              │
+│ [opciones seleccionables]│
+│ Estado del feriado       │
+│ [Volver]                 │
+└──────────────────────────┘
 
-## Identidad visual
+Agenda
+┌──────────────────────────┐
+│ Agenda · fecha elegida   │
+│ Resumen del día          │
+│ [días desplazables]      │
+│ Hora · cliente · servicio│
+└──────────────────────────┘
+```
 
-Se mantienen tokens históricos: fondo claro `#F3F4F2`, texto `#20292B`, acento `#245A63`; el tema oscuro utiliza fondo `#181D1E` y acento `#9BCBD0`. Tipografía de sistema para controles y Georgia para identidad. Bordes discretos, foco visible, contrastes de tema y controles táctiles.
+## Diseño responsive
 
-Bootstrap aporta utilidades de disposición únicamente al aviso académico. El diseño principal utiliza CSS propio; no se carga su reinicio global para no alterar componentes existentes.
+El diseño parte desde móvil. Las opciones táctiles tienen espacio suficiente y algunos selectores usan desplazamiento horizontal para evitar desbordar la página. En escritorio, el panel utiliza navegación lateral y más ancho disponible.
 
-## Reglas
+## Colores y estructura visual
 
-Solo feriados `nationalHoliday: true`, país `CL` y tipo `Public`. No traducir inventando datos: se muestra el nombre proporcionado por la API, que puede estar en inglés. Fallo o respuesta vacía nunca bloquea una reserva. No se crea ni modifica disponibilidad a partir de feriados.
+Se mantiene la identidad «Oficio cercano» heredada del proyecto original:
+
+- Fondo claro: `#F3F4F2`.
+- Texto principal: `#20292B`.
+- Acento: `#245A63`.
+- Tema oscuro: fondo `#181D1E` y acento `#9BCBD0`.
+- Georgia se utiliza en elementos de identidad y tipografía de sistema en controles.
+
+Las tarjetas, bordes discretos y estados de foco también provienen del diseño histórico. Para el taller se integró la información de feriados sin cambiar la jerarquía principal de la reserva.
+
+## Feriados en la interfaz
+
+`DateSelector` y `SchedulePage` consumen el mismo hook. La fecha sigue siendo la acción principal y el feriado aparece como información secundaria. Los nombres se normalizan en un solo servicio y se muestran en español cuando existe una equivalencia confirmada.
+
+Un feriado no cambia automáticamente la disponibilidad. Si la API falla, aparece un mensaje con reintento y el flujo local continúa funcionando.
