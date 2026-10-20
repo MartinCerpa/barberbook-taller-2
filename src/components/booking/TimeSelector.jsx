@@ -7,7 +7,7 @@ const statusLabels = {
 }
 
 function TimeSelector({ slots, selectedTime, onSelect, onBack, feedback }) {
-  const selectedSlot = slots.find((slot) => slot.time === selectedTime)
+  const horarioSeleccionado = slots.find((horario) => horario.time === selectedTime)
 
   return (
     <div className={`booking-step booking-step--time${feedback ? ' is-advancing' : ''}`}>
@@ -25,26 +25,26 @@ function TimeSelector({ slots, selectedTime, onSelect, onBack, feedback }) {
 
       <fieldset className="time-options">
         <legend className="sr-only">Selecciona un horario</legend>
-        {slots.map((slot) => {
-          const isSelectable = slot.isBookable
-          const isSelected = selectedTime === slot.time && isSelectable
+        {slots.map((horario) => {
+          const sePuedeSeleccionar = horario.isBookable
+          const estaSeleccionado = selectedTime === horario.time && sePuedeSeleccionar
 
           return (
             <label
-              className={`booking-option time-option time-option--${slot.status}${isSelected ? ' is-selected' : ''}`}
-              key={slot.time}
+              className={`booking-option time-option time-option--${horario.status}${estaSeleccionado ? ' is-selected' : ''}`}
+              key={horario.time}
             >
               <input
                 type="radio"
                 name="booking-time"
-                value={slot.time}
-                checked={isSelected}
-                onChange={() => onSelect(slot.time)}
-                onClick={isSelected ? () => onSelect(slot.time) : undefined}
-                disabled={!isSelectable}
+                value={horario.time}
+                checked={estaSeleccionado}
+                onChange={() => onSelect(horario.time)}
+                onClick={estaSeleccionado ? () => onSelect(horario.time) : undefined}
+                disabled={!sePuedeSeleccionar}
               />
-              <strong>{slot.time}</strong>
-              <span>{statusLabels[slot.status]}</span>
+              <strong>{horario.time}</strong>
+              <span>{statusLabels[horario.status]}</span>
             </label>
           )
         })}
@@ -56,7 +56,7 @@ function TimeSelector({ slots, selectedTime, onSelect, onBack, feedback }) {
         </p>
       )}
 
-      {selectedSlot?.isBookable && selectedSlot.status === 'pending' && (
+      {horarioSeleccionado?.isBookable && horarioSeleccionado.status === 'pending' && (
         <div className="pending-warning" role="status">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 8v5M12 17h.01M10.3 3.8 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z" />

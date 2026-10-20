@@ -77,6 +77,7 @@ const commitRecord = (state, current, changes, undoable = false) => {
 }
 
 const confirmRequestInState = (state, current, now, { origin = 'manual', undoable = false } = {}) => {
+  // Confirma una solicitud y libera las competidoras del mismo horario.
   const confirmedAt = now.toISOString()
   const competingRequests = state.records.filter((record) => record.id !== current.id &&
     record.source === 'request' && record.status === 'pending' &&

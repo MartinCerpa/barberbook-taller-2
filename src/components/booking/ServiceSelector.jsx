@@ -12,30 +12,30 @@ function ServiceSelector({ services, selectedId, onSelect, onBack, feedback }) {
       <fieldset className="booking-options booking-options--services">
         <legend className="sr-only">Selecciona un servicio</legend>
         {services.length ? (
-          services.map((service) => {
-            const isSelected = selectedId === service.id
+          services.map((servicio) => {
+            const estaSeleccionado = selectedId === servicio.id
 
             return (
               <label
-                className={`booking-option service-option${isSelected ? ' is-selected' : ''}`}
-                key={service.id}
+                className={`booking-option service-option${estaSeleccionado ? ' is-selected' : ''}`}
+                key={servicio.id}
               >
                 <input
                   type="radio"
                   name="booking-service"
-                  value={service.id}
-                  checked={isSelected}
-                  onChange={() => onSelect(service.id)}
-                  onClick={isSelected ? () => onSelect(service.id) : undefined}
+                  value={servicio.id}
+                  checked={estaSeleccionado}
+                  onChange={() => onSelect(servicio.id)}
+                  onClick={estaSeleccionado ? () => onSelect(servicio.id) : undefined}
                 />
                 <span className="booking-option__check" aria-hidden="true" />
-                <strong>{service.name}</strong>
+                <strong>{servicio.name}</strong>
                 <span className="service-option__description">
-                  {service.description}
+                  {servicio.description}
                 </span>
                 <span className="service-option__details">
-                  <b>{formatCurrency(service.price)}</b>
-                  <span>{service.duration} min aprox.</span>
+                  <b>{formatCurrency(servicio.price)}</b>
+                  <span>{servicio.duration} min aprox.</span>
                 </span>
               </label>
             )

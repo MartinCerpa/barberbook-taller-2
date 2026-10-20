@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { fetchHolidays, normalizeHolidays, HOLIDAY_API } from '../src/services/holidayService.js'
+import { consultarFeriados, normalizarFeriados, HOLIDAY_API } from '../src/services/holidayService.js'
 
 // Fixtures exclusivos de tests: nunca forman parte del calendario de la aplicación.
 const holiday = {
@@ -10,7 +10,7 @@ const holiday = {
 
 test('fetch real usa endpoint v4 por año y no envía credenciales', async () => {
   let request
-  const rows = await fetchHolidays(2026, { fetcher: async (url, options) => {
+  const rows = await consultarFeriados(2026, { fetcher: async (url, options) => {
     request = { url, options }
     return { ok: true, json: async () => [holiday] }
   } })
@@ -21,7 +21,7 @@ test('fetch real usa endpoint v4 por año y no envía credenciales', async () =>
 })
 
 test('filtra regionales y tipos no públicos, ordena y elimina duplicados', () => {
-  const rows = normalizeHolidays([
+  const rows = normalizarFeriados([
     holiday, holiday,
     { ...holiday, date: '2026-01-01', name: 'New Year' },
     { ...holiday, date: '2026-06-07', nationalHoliday: false },
@@ -31,7 +31,7 @@ test('filtra regionales y tipos no públicos, ordena y elimina duplicados', () =
 })
 
 test('respuesta vacía es válida y no inventa feriados', () => {
-  assert.deepEqual(normalizeHolidays([], 2026), [])
+  assert.deepEqual(normalizarFeriados([], 2026), [])
 })
 
 test('rechaza fechas imposibles, país, año y tipos incorrectos', () => {
@@ -40,7 +40,7 @@ test('rechaza fechas imposibles, país, año y tipos incorrectos', () => {
     [{ ...holiday, date: '2027-10-31' }], [{ ...holiday, countryCode: 'AR' }],
     [{ ...holiday, name: '' }], [{ ...holiday, nationalHoliday: 'true' }],
     [{ ...holiday, holidayTypes: null }],
-  ]) assert.throws(() => normalizeHolidays(invalid, 2026))
+  ]) assert.throws(() => normalizarFeriados(invalid, 2026))
 })
 
 test('propaga error HTTP, red y JSON para que React ofrezca reintentar', async () => {
@@ -48,22 +48,22 @@ test('propaga error HTTP, red y JSON para que React ofrezca reintentar', async (
     async () => ({ ok: false, status: 503 }),
     async () => { throw new Error('network') },
     async () => ({ ok: true, json: async () => { throw new SyntaxError('json') } }),
-  ]) await assert.rejects(fetchHolidays(2026, { fetcher }))
+  ]) await assert.rejects(consultarFeriados(2026, { fetcher }))
 })
 
 test('un reintento después de un fallo obtiene datos y no conserva error', async () => {
-  await assert.rejects(fetchHolidays(2026, { fetcher: async () => ({ ok: false }) }))
-  assert.equal((await fetchHolidays(2026, {
+  await assert.rejects(consultarFeriados(2026, { fetcher: async () => ({ ok: false }) }))
+  assert.equal((await consultarFeriados(2026, {
     fetcher: async () => ({ ok: true, json: async () => [holiday] }),
   })).length, 1)
 })
 
 test('valida año antes de consultar y soporta cancelación al desmontar', async () => {
-  await assert.rejects(fetchHolidays(NaN))
-  await assert.rejects(fetchHolidays(1800))
+  await assert.rejects(consultarFeriados(NaN))
+  await assert.rejects(consultarFeriados(1800))
   const controller = new AbortController()
   controller.abort()
-  await fetchHolidays(2026, { signal: controller.signal, fetcher: async (_url, options) => {
+  await consultarFeriados(2026, { signal: controller.signal, fetcher: async (_url, options) => {
     assert.equal(options.signal.aborted, true)
     return { ok: true, json: async () => [] }
   } })
