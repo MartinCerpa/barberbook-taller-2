@@ -38,30 +38,34 @@ export function availabilityService(pool) {
   return {
     async get(professionalId, serviceId, startDate, days) {
       const resource = await activeResources(pool,professionalId,serviceId)
-      const intervals = (await pool.query('SELECT * FROM availability WHERE professional_id=$1 ORDER BY weekday,start_minute', [professionalId])).rows
-      // Una consulta por día, sin una consulta por cada posible horario.
-      const results = []
-      for (let offset=0; offset<days; offset++) {
-        const { rows: [day] } = await pool.query(`SELECT to_char($1::date+$2::int,'YYYY-MM-DD') AS id,
-          EXTRACT(DOW FROM $1::date+$2::int)::int AS weekday`, [startDate,offset])
-        const busy = (await pool.query(`SELECT starts_at,ends_at FROM bookings WHERE professional_id=$1
+      // PostgreSQL genera los intervalos con la zona horaria del negocio en una sola consulta.
+      const rows = (await pool.query(`WITH days AS (
+          SELECT $2::date+i AS day FROM generate_series(0,$3::int-1) i
+        ), slots AS (
+          SELECT d.day,d.day+minute*interval '1 minute' AS local_start
+          FROM days d JOIN availability a ON a.professional_id=$1 AND a.weekday=EXTRACT(DOW FROM d.day)
+          CROSS JOIN LATERAL generate_series(a.start_minute,a.end_minute-$4::int,15) minute
+        ) SELECT to_char(d.day,'YYYY-MM-DD') AS id,to_char(s.local_start,'HH24:MI') AS time,
+          s.local_start AT TIME ZONE 'America/Santiago' AS starts_at,
+          (s.local_start AT TIME ZONE 'America/Santiago') > now()
+            AND d.day <= (now() AT TIME ZONE 'America/Santiago')::date+60 AS allowed
+        FROM days d LEFT JOIN slots s ON s.day=d.day ORDER BY d.day,s.local_start`,
+      [professionalId,startDate,days,resource.duration])).rows
+      const busy = (await pool.query(`SELECT starts_at,ends_at FROM bookings WHERE professional_id=$1
           AND status IN ('pending','confirmed','completed','no_show')
           UNION ALL SELECT starts_at,ends_at FROM availability_blocks WHERE professional_id=$1
           UNION ALL SELECT called_at,GREATEST(now(),called_at+duration*interval '1 minute') FROM tickets WHERE professional_id=$1 AND status='called'`, [professionalId])).rows
-        const slots = []
-        for (const interval of intervals.filter((i) => i.weekday === day.weekday)) {
-          for (let minute=interval.start_minute; minute+resource.duration<=interval.end_minute; minute+=15) {
-            const time = `${String(Math.floor(minute/60)).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`
-            const { rows: [stamp] } = await pool.query(`SELECT ($1::timestamp AT TIME ZONE 'America/Santiago') AS start,
-              ($1::timestamp AT TIME ZONE 'America/Santiago') > now() AND $1::timestamp::date <= (now() AT TIME ZONE 'America/Santiago')::date+60 AS allowed`, [localStart(day.id,time)])
-            const start = stamp.start.getTime(), end = start + resource.duration*60000
-            const isBookable = stamp.allowed && !busy.some((b) => start < b.ends_at.getTime() && end > b.starts_at.getTime())
-            slots.push({ time, isBookable, bookingStatus: isBookable ? 'available' : 'unavailable' })
-          }
-        }
-        results.push({ id: day.id, slots, available: slots.some((s) => s.isBookable) })
+      const daysById = new Map()
+      for (const row of rows) {
+        if (!daysById.has(row.id)) daysById.set(row.id,{ id: row.id,slots: [],available: false })
+        if (!row.time) continue
+        const start=row.starts_at.getTime(),end=start+resource.duration*60000
+        const isBookable=row.allowed && !busy.some((b) => start<b.ends_at.getTime() && end>b.starts_at.getTime())
+        const day=daysById.get(row.id)
+        day.slots.push({ time: row.time,isBookable,bookingStatus: isBookable ? 'available' : 'unavailable' })
+        day.available ||= isBookable
       }
-      return results
+      return [...daysById.values()]
     },
     async weekly(professionalId) {
       return (await pool.query('SELECT * FROM availability WHERE professional_id=$1 ORDER BY weekday,start_minute', [professionalId])).rows.map(camelRow)

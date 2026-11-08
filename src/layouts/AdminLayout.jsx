@@ -11,6 +11,8 @@ const sectionLabels = {
   finances: 'Finanzas',
   services: 'Servicios',
   settings: 'Configuración',
+  queue: 'Turnos',
+  history: 'Historial',
 }
 
 function AdminLayout({ activeSection, children, navigationKey, onNavigate }) {

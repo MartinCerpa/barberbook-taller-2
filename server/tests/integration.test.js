@@ -56,6 +56,10 @@ test('integración REST con PostgreSQL y MongoDB reales aislados', { skip: !enab
     assert.equal(stored.body.data.dateId,input.dateId)
     assert.equal(Number((await db.pool.query('SELECT COUNT(*) FROM bookings WHERE id=$1',[booking.id])).rows[0].count),1)
     assert.equal(Number((await db.pool.query('SELECT COUNT(*) FROM event_outbox WHERE entity_id=$1',[booking.id])).rows[0].count),1)
+    const alias={ ...input,id: randomUUID(),time: '13:30',customer: { ...input.customer,name: 'Alias de Prueba' } }
+    assert.equal((await http.post('/api/bookings').send(alias).expect(201)).body.data.customerName,'Alias de Prueba')
+    await http.post('/api/bookings').send(alias).expect(200)
+    assert.equal((await http.get(`/api/bookings/${booking.id}`).expect(200)).body.data.customerName,'Cliente Prueba')
   })
   await t.test('solapamientos de intervalos y concurrencia se rechazan; adyacentes funcionan',async () => {
     await http.post('/api/bookings').send({ ...input,id: randomUUID(),time: '10:15' }).expect(409)
@@ -64,8 +68,8 @@ test('integración REST con PostgreSQL y MongoDB reales aislados', { skip: !enab
     assert.deepEqual(result.map((r) => r.status).sort(),[201,409])
     const duration=await http.post('/api/bookings').send({ ...input,id: randomUUID(),time: '23:30' }).expect(422)
     assert.ok(duration.body.error.message)
-    await assert.rejects(db.pool.query(`INSERT INTO bookings(id,customer_id,branch_id,professional_id,service_id,duration,price,starts_at,ends_at)
-      SELECT $1,customer_id,branch_id,professional_id,service_id,duration,price,starts_at,ends_at FROM bookings WHERE id=$2`,[randomUUID(),booking.id]),{ code: '23P01' })
+    await assert.rejects(db.pool.query(`INSERT INTO bookings(id,customer_id,branch_id,professional_id,service_id,duration,price,starts_at,ends_at,customer_name_snapshot)
+      SELECT $1,customer_id,branch_id,professional_id,service_id,duration,price,starts_at,ends_at,customer_name_snapshot FROM bookings WHERE id=$2`,[randomUUID(),booking.id]),{ code: '23P01' })
   })
   await t.test('disponibilidad y bloqueos se reflejan en SQL y API',async () => {
     const response=await http.get(`/api/availability?professionalId=professional-matias&serviceId=haircut&startDate=${clock.tomorrow}&days=1`).expect(200)

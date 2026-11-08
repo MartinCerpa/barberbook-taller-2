@@ -9,7 +9,7 @@ function DateSelector({ dates, selectedId, onSelect, onBack, feedback }) {
       <div className="booking-step__heading">
         <p className="eyebrow">Paso 2</p>
         <h1>Elige una fecha</h1>
-        <p>Mostramos los próximos días de atención de Matías.</p>
+        <p>Mostramos los próximos días de atención del profesional seleccionado.</p>
       </div>
 
       <HolidayNotice estado={estadoFeriados} fechaSeleccionada={selectedId} />

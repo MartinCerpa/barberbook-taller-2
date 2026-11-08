@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import AdminPanelPage from './pages/AdminPanelPage'
+import AdminPanelPage from './pages/ApiAdminPanel'
 import PublicBarberPage from './pages/PublicBarberPage'
 
 const adminSections = new Set([
@@ -10,6 +10,8 @@ const adminSections = new Set([
   'finances',
   'services',
   'settings',
+  'queue',
+  'history',
 ])
 
 const getAdminSection = () => {

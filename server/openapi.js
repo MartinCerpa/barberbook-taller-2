@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { endpoints } from './routes/endpoints.js'
+import { catalogs } from './validations/schemas.js'
 
 const string = { type: 'string' }, integer = { type: 'integer' }, number = { type: 'number' }
 const object = (properties,required = []) => ({ type: 'object',properties,required })
@@ -20,6 +21,25 @@ const schemas = {
   Metrics: object({ queue: object({ total: integer,pending: integer,called: integer,completed: integer,averageWaitMinutes: number,averageServiceMinutes: number }),bookings: object({ total: integer,pending: integer,confirmed: integer,completed: integer,revenue: number }) }),
   EventList: array(object({ _id: string,entityType: string,entityId: string,action: string,occurredAt: { type: 'string',format: 'date-time' },metadata: { type: 'object' } })),
 }
+const catalogNames = { branches: 'Branch',services: 'Service',professionals: 'Professional',modules: 'Module' }
+for (const [resource,schema] of Object.entries(catalogs)) {
+  schemas[catalogNames[resource]] = object({ id: string,...jsonSchema(schema).properties },['id','name','active'])
+}
+const block = object({ id: string,professionalId: string,startsAt: { type: 'string',format: 'date-time' },endsAt: { type: 'string',format: 'date-time' } },['id','professionalId','startsAt','endsAt'])
+const responsesByAction = {
+  health: object({ status: { const: 'ok' },postgres: string,mongo: string,pendingEvents: integer }),
+  availabilityWeekly: array(object({ id: string,professionalId: string,weekday: integer,startMinute: integer,endMinute: integer })),
+  availabilitySet: object({ updated: { const: true } }),blockList: array(block),blockCreate: block,blockDelete: object({ id: string }),
+  customers: array(object({ id: string,name: string,phone: string,bookings: integer,completed: integer,spent: number })),
+  history: array(object({ id: string,type: { enum: ['booking','ticket'] },status: string,occurredAt: { type: 'string',format: 'date-time' } })),
+}
+const responseSchema = (endpoint) => {
+  if (endpoint.response) return ref(endpoint.response)
+  if (responsesByAction[endpoint.action]) return responsesByAction[endpoint.action]
+  const resource = endpoint.path.split('/')[1]
+  if (catalogNames[resource]) return endpoint.action.endsWith('List') ? array(ref(catalogNames[resource])) : ref(catalogNames[resource])
+  throw new Error(`Falta contrato de respuesta para ${endpoint.action}`)
+}
 
 export const openapi = { openapi: '3.1.0',info: { title: 'BarberBook académico · Hito 3',version: '1.0.0',description: 'Reservas anticipadas y turnos presenciales. Horarios America/Santiago. Solo datos ficticios; panel académico sin autenticación. Reservas pendientes también ocupan la agenda. Errores: 400 validación, 404 inexistente, 409 conflicto/estado, 422 horario, 503 persistencia indisponible. DELETE de catálogos desactiva y conserva historial.' },servers: [{ url: '/api' }],paths: {},components: { schemas } }
 for (const endpoint of endpoints) {
@@ -30,7 +50,7 @@ for (const endpoint of endpoints) {
     const schema = jsonSchema(endpoint[kind])
     for (const [name,property] of Object.entries(schema.properties)) parameters.push({ name,in: kind === 'params' ? 'path' : 'query',required: schema.required?.includes(name) || kind === 'params',schema: property })
   }
-  const responses = { 200: { description: 'Operación completada; reintentos idempotentes retornan el recurso existente.',content: content(object({ data: endpoint.response ? ref(endpoint.response) : {} },['data'])) } }
+  const responses = { 200: { description: 'Operación completada; reintentos idempotentes retornan el recurso existente.',content: content(object({ data: responseSchema(endpoint) },['data'])) } }
   if (endpoint.created) responses[201] = { ...responses[200],description: 'Recurso creado.' }
   for (const [code,description] of Object.entries({ 400: 'Entrada inválida.',404: 'Recurso inexistente o cola vacía.',409: 'Conflicto de integridad, ocupación o transición de estado.',422: 'Fecha, duración u horario fuera de disponibilidad.',503: 'Base de datos temporalmente indisponible.',500: 'Error interno.' })) responses[code] = { description,content: content(ref('Error')) }
   openapi.paths[path] ??= {}

@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  createBooking as crearReserva,
-  createBookingId as crearIdReserva,
-} from '../../services/bookingService.js'
-import {
-  getEffectiveBookingTimeSlotsForDate,
-  getPublicBookingDates,
-  subscribeAvailability,
-} from '../../services/availabilityService.js'
+import { remoteBooking as crearReserva } from '../../services/api.js'
+import useApiAvailability from '../../hooks/useApiAvailability.js'
 import BookingProgress from './BookingProgress'
 import BookingSuccess from './BookingSuccess'
 import BookingSummary from './BookingSummary'
@@ -31,7 +24,7 @@ const ESPERA_SELECCION_MS = 150
 const prefiereMovimientoReducido = () =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-function BookingFlow({ services, onExit }) {
+function BookingFlow({ services, professionalId, onExit }) {
   const [etapaActual, setEtapaActual] = useState(0)
   const [reserva, setReserva] = useState(reservaInicial)
   const [mensajeSeleccion, setMensajeSeleccion] = useState(null)
@@ -43,10 +36,10 @@ function BookingFlow({ services, onExit }) {
   const [errorEnvio, setErrorEnvio] = useState(null)
   const [estaEnviando, setEstaEnviando] = useState(false)
   const [reservaEnviada, setReservaEnviada] = useState(null)
-  const [, refrescarDisponibilidad] = useState(0)
-  useEffect(() => subscribeAvailability(() => refrescarDisponibilidad((valor) => valor + 1)), [])
-  const fechas = getPublicBookingDates()
-  const horarios = reserva.dateId ? getEffectiveBookingTimeSlotsForDate(reserva.dateId) : []
+  const [revisionDisponibilidad, refrescarDisponibilidad] = useState(0)
+  const disponibilidad = useApiAvailability(professionalId, reserva.serviceId, revisionDisponibilidad)
+  const fechas = disponibilidad.dates
+  const horarios = disponibilidad.days.find((day) => day.id === reserva.dateId)?.slots ?? []
   const servicioSeleccionado = services.find(
     (servicio) => servicio.id === reserva.serviceId,
   )
@@ -155,12 +148,13 @@ function BookingFlow({ services, onExit }) {
     enviandoRef.current = true
     setEstaEnviando(true)
     setErrorEnvio(null)
-    idEnvio.current ??= crearIdReserva()
+    idEnvio.current ??= crypto.randomUUID()
     try {
       // Persiste la solicitud solo después de revisar todos los datos.
-      const resultado = await crearReserva({ ...reserva, id: idEnvio.current })
+      const resultado = await crearReserva({ ...reserva, professionalId, id: idEnvio.current })
       if (!resultado.success) {
         setErrorEnvio(resultado.error)
+        refrescarDisponibilidad((valor) => valor + 1)
         return
       }
       setReservaEnviada(resultado.booking)
@@ -203,6 +197,9 @@ function BookingFlow({ services, onExit }) {
         <BookingProgress currentStep={etapaActual} onNavigate={irAEtapa} />
 
         <div className="booking-card">
+          {disponibilidad.loading && <p role="status">Consultando disponibilidad…</p>}
+          {disponibilidad.error && <div role="alert"><p>{disponibilidad.error}</p><button type="button" onClick={disponibilidad.retry}>Reintentar disponibilidad</button></div>}
+          {etapaActual === 1 && !disponibilidad.loading && !disponibilidad.error && !fechas.some((fecha) => fecha.available) && <p role="status">No hay horarios disponibles para este servicio en los próximos 14 días.</p>}
           {etapaActual === 0 && (
             <ServiceSelector
               services={services}

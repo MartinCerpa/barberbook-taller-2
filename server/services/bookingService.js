@@ -31,9 +31,9 @@ export function bookingService(pool) {
         const resource = await activeResources(client,input.professionalId,input.serviceId)
         await assertAvailable(client,{ ...input,duration: resource.duration })
         const userId = await customerId(client,input.customer)
-        await client.query(`INSERT INTO bookings(id,customer_id,branch_id,professional_id,service_id,duration,price,starts_at,ends_at)
-          VALUES($1,$2,$3,$4,$5,$6::int,$7,$8::timestamp AT TIME ZONE 'America/Santiago',($8::timestamp AT TIME ZONE 'America/Santiago')+$6::int*interval '1 minute')`,
-        [id,userId,resource.branch_id,input.professionalId,input.serviceId,resource.duration,resource.price,localStart(input.dateId,input.time)])
+        await client.query(`INSERT INTO bookings(id,customer_id,branch_id,professional_id,service_id,duration,price,starts_at,ends_at,customer_name_snapshot)
+          VALUES($1,$2,$3,$4,$5,$6::int,$7,$8::timestamp AT TIME ZONE 'America/Santiago',($8::timestamp AT TIME ZONE 'America/Santiago')+$6::int*interval '1 minute',$9)`,
+        [id,userId,resource.branch_id,input.professionalId,input.serviceId,resource.duration,resource.price,localStart(input.dateId,input.time),input.customer.name])
         await recordEvent(client,'booking',id,'booking.created',{ status: 'pending' })
         return { booking: present(await findBooking(client,id)), created: true }
       })

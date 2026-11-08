@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "api": "node server/index.js",
     "api:dev": "node --watch server/index.js",
-    "db:local": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/local-databases.ps1",
+    "db:local": "powershell -NoProfile -File scripts/local-databases.ps1",
     "test:integration": "node --test server/tests/integration.test.js",
     "test:e2e": "playwright test"
   },

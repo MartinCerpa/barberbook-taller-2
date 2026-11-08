@@ -25,7 +25,7 @@ export function ticketService(pool) {
         const service = requireFound((await client.query(`SELECT s.* FROM services s JOIN branches b ON b.id=s.branch_id
           WHERE s.id=$1 AND s.branch_id=$2 AND s.active AND b.active`, [input.serviceId,input.branchId])).rows[0], 'Servicio o sucursal no disponible.')
         const userId = await customerId(client,input.customer)
-        await client.query('INSERT INTO tickets(id,customer_id,branch_id,service_id,duration) VALUES($1,$2,$3,$4,$5)', [id,userId,input.branchId,input.serviceId,service.duration])
+        await client.query('INSERT INTO tickets(id,customer_id,branch_id,service_id,duration,customer_name_snapshot) VALUES($1,$2,$3,$4,$5,$6)', [id,userId,input.branchId,input.serviceId,service.duration,input.customer.name])
         await recordEvent(client,'ticket',id,'ticket.issued',{ status: 'pending',branchId: input.branchId })
         return { ticket: camelRow(await find(client,id)), created: true }
       })
