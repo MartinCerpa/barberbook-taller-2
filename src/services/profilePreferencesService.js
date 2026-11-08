@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot,remoteMutation } from './remoteState.js'
 export const PROFILE_PREFERENCES_STORAGE_KEY =
   'barberbook-taller-2:professional-profile:v1'
 
@@ -72,6 +73,7 @@ export const sanitizeProfilePreferences = (value) => {
 }
 
 export const getProfilePreferences = () => {
+  if(usingApi) return remoteSnapshot().professional
   const storage = getStorage()
 
   if (!storage) {
@@ -92,6 +94,7 @@ export const getProfilePreferences = () => {
 }
 
 export const saveProfilePreferences = (value) => {
+  if(usingApi) return remoteMutation('/professional/profile',value).then(result=>({...result,preferences:result.success?sanitizeProfilePreferences(remoteSnapshot().professional):null}))
   const storage = getStorage()
   const preferences = sanitizeProfilePreferences(value)
 
@@ -112,6 +115,7 @@ export const saveProfilePreferences = (value) => {
 }
 
 export const clearProfilePreferences = () => {
+  if(usingApi) return remoteMutation('/professional/profile',undefined,'DELETE').then(result=>result.success)
   const storage = getStorage()
 
   if (!storage) {

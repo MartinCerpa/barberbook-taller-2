@@ -1,3 +1,4 @@
+import { usingApi,remoteMutation } from './remoteState.js'
 import {
   getBookingDates as getBaseBookingDates,
   getTimeSlotsForDate as getBaseTimeSlotsForDate,
@@ -175,6 +176,7 @@ const hasAction = (date, time, action, requestsForDate) =>
   )
 
 export const blockTimeSlot = (date, time, requestsForDate) => {
+  if(usingApi) return remoteMutation('/professional/slots',{date,time,action:'block'})
   if (!hasAction(date, time, 'block', requestsForDate) &&
     !hasAction(date, time, 'unblock', requestsForDate)) {
     return { success: false, reason: 'unavailable' }
@@ -187,9 +189,10 @@ export const blockTimeSlot = (date, time, requestsForDate) => {
 }
 
 export const unblockTimeSlot = (date, time) =>
-  saveBlockedSlots(getBlockedSlots().filter((slot) => getSlotId(slot.date, slot.time) !== getSlotId(date, time)))
+  usingApi?remoteMutation('/professional/slots',{date,time,action:'unblock'}):saveBlockedSlots(getBlockedSlots().filter((slot) => getSlotId(slot.date, slot.time) !== getSlotId(date, time)))
 
 export const enableTimeSlot = (date, time, requestsForDate) => {
+  if(usingApi) return remoteMutation('/professional/slots',{date,time,action:'enable'})
   if (!hasAction(date, time, 'enable', requestsForDate)) {
     return { success: false, reason: 'unavailable' }
   }
@@ -197,7 +200,7 @@ export const enableTimeSlot = (date, time, requestsForDate) => {
 }
 
 export const restoreTimeSlot = (date, time) =>
-  saveEnabledSlots(getEnabledSlots().filter((slot) => getSlotId(slot.date, slot.time) !== getSlotId(date, time)))
+  usingApi?remoteMutation('/professional/slots',{date,time,action:'restore'}):saveEnabledSlots(getEnabledSlots().filter((slot) => getSlotId(slot.date, slot.time) !== getSlotId(date, time)))
 
 export const availabilityService = {
   getBookingDates,

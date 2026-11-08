@@ -13,7 +13,8 @@
     "api:dev": "node --watch server/index.js",
     "db:local": "powershell -NoProfile -File scripts/local-databases.ps1",
     "test:integration": "node --test server/tests/integration.test.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "auth:setup": "node scripts/setup-professional.js"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",

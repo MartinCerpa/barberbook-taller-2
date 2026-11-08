@@ -31,7 +31,8 @@ test('API devuelve 400 antes de acceder a persistencia y oculta errores internos
   const broken = await request(app).get('/api/services').expect(503)
   assert.equal(JSON.stringify(broken.body).includes('credencial'),false)
   await request(app).post('/api/bookings').set('Content-Type','application/json').send('{').expect(400)
-  await request(app).get('/api/bookings?limit=10000').expect(400)
+  await request(app).get('/api/bookings').expect(401)
+  await request(app).get('/api/availability?days=10000').expect(400)
 })
 
 test('OpenAPI y Swagger publican todas las operaciones registradas',async () => {

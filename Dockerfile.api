@@ -3,6 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev --ignore-scripts
 COPY server ./server
+COPY shared ./shared
 USER node
 EXPOSE 3003
 CMD ["node", "server/index.js"]

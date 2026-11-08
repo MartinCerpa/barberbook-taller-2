@@ -1,4 +1,8 @@
 .fs-page { min-width: 0; }
+.login-shell { max-width: 32rem; padding-block: 3rem; }
+.login-shell form { display: grid; gap: 1.3rem; margin-block: 1.5rem; }
+.professional-logout { padding: .5rem .7rem; min-height: 44px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); background: var(--color-surface); cursor: pointer; }
+@media(max-width:600px) { .professional-logout { font-size: .75rem; } .admin-header__actions { gap: .4rem; } }
 .fs-card { margin-block: 1rem; padding: clamp(1rem,3vw,1.6rem); border: 1px solid var(--color-border,#ddd); border-radius: 16px; background: var(--color-surface,#fff); color: var(--color-text,#202124); min-width: 0; }
 .fs-card h2 { font-size: 1.2rem; margin-bottom: .8rem; }
 .fs-card h3 { font-size: 1rem; }

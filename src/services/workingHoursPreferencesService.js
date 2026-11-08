@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot,remoteMutation } from './remoteState.js'
 import { getDefaultWeeklyHours, timeToMinutes, WEEK_DAYS } from '../data/availability.js'
 import { isValidTime, notifyAvailabilityChange } from './availabilityPreferencesService.js'
 
@@ -54,6 +55,7 @@ export const sanitizeWorkingHours = (value) => {
 }
 
 export const getWorkingHours = () => {
+  if(usingApi) return remoteSnapshot().workingHours
   try {
     const value = getStorage()?.getItem(WORKING_HOURS_STORAGE_KEY)
     return value ? sanitizeWorkingHours(JSON.parse(value)) : getDefaultWeeklyHours()
@@ -63,6 +65,7 @@ export const getWorkingHours = () => {
 }
 
 export const saveWorkingHours = (value) => {
+  if(usingApi) return remoteMutation('/professional/hours',value)
   const days = value?.days
   const errors = {}
   const normalizedDays = WEEK_DAYS.map(({ day, label }) => {

@@ -23,9 +23,10 @@ export function eventService(pool, collection) {
   }
   return {
     flush,
-    async list({ entityId, limit = 100 }) {
+    async list({ entityId, entityIds, limit = 100 }) {
       await flush()
-      return collection.find(entityId ? { entityId } : {}).sort({ occurredAt: -1, _id: -1 }).limit(limit).toArray()
+      if(entityIds&&entityId&&!entityIds.includes(entityId))return []
+      return collection.find(entityIds?{entityId:entityId||{$in:entityIds}}:entityId?{entityId}:{}).sort({ occurredAt: -1, _id: -1 }).limit(limit).toArray()
     },
   }
 }

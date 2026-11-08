@@ -15,7 +15,7 @@ export const blockInput = z.object({ professionalId: id, dateId, time, duration:
 export const availabilityInput = z.object({ professionalId: id, weekday: z.number().int().min(0).max(6), intervals: z.array(z.object({ start: time, end: time }).strict().refine((v) => v.start < v.end)).max(10) }).strict()
 export const catalogs = {
   branches: z.object({ name, address: z.string().trim().min(2).max(200), active: z.boolean().optional() }).strict(),
-  services: z.object({ branchId: id, name, description: z.string().max(500).optional(), duration: z.number().int().min(5).max(480), price: z.number().int().min(0).max(100000000), active: z.boolean().optional() }).strict(),
+  services: z.object({ branchId: id, professionalId: id.optional(), name, description: z.string().max(500).optional(), duration: z.number().int().min(5).max(480), price: z.number().int().min(0).max(100000000), active: z.boolean().optional() }).strict(),
   professionals: z.object({ branchId: id, name, title: z.string().max(150).optional(), bio: z.string().max(1000).optional(), active: z.boolean().optional() }).strict(),
   modules: z.object({ branchId: id, professionalId: id, name, active: z.boolean().optional() }).strict(),
 }

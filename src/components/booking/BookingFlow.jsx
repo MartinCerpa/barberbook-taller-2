@@ -24,7 +24,7 @@ const ESPERA_SELECCION_MS = 150
 const prefiereMovimientoReducido = () =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-function BookingFlow({ services, professionalId, onExit }) {
+function BookingFlow({ services, professionalId, bookingHorizonDays=14, onExit }) {
   const [etapaActual, setEtapaActual] = useState(0)
   const [reserva, setReserva] = useState(reservaInicial)
   const [mensajeSeleccion, setMensajeSeleccion] = useState(null)
@@ -37,7 +37,7 @@ function BookingFlow({ services, professionalId, onExit }) {
   const [estaEnviando, setEstaEnviando] = useState(false)
   const [reservaEnviada, setReservaEnviada] = useState(null)
   const [revisionDisponibilidad, refrescarDisponibilidad] = useState(0)
-  const disponibilidad = useApiAvailability(professionalId, reserva.serviceId, revisionDisponibilidad)
+  const disponibilidad = useApiAvailability(professionalId, reserva.serviceId, revisionDisponibilidad,bookingHorizonDays)
   const fechas = disponibilidad.dates
   const horarios = disponibilidad.days.find((day) => day.id === reserva.dateId)?.slots ?? []
   const servicioSeleccionado = services.find(
@@ -199,7 +199,7 @@ function BookingFlow({ services, professionalId, onExit }) {
         <div className="booking-card">
           {disponibilidad.loading && <p role="status">Consultando disponibilidad…</p>}
           {disponibilidad.error && <div role="alert"><p>{disponibilidad.error}</p><button type="button" onClick={disponibilidad.retry}>Reintentar disponibilidad</button></div>}
-          {etapaActual === 1 && !disponibilidad.loading && !disponibilidad.error && !fechas.some((fecha) => fecha.available) && <p role="status">No hay horarios disponibles para este servicio en los próximos 14 días.</p>}
+          {etapaActual === 1 && !disponibilidad.loading && !disponibilidad.error && !fechas.some((fecha) => fecha.available) && <p role="status">No hay horarios disponibles para este servicio en los próximos {bookingHorizonDays} días.</p>}
           {etapaActual === 0 && (
             <ServiceSelector
               services={services}

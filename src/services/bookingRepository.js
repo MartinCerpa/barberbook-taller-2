@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot } from './remoteState.js'
 import { clients } from '../data/clients.js'
 import { initialRequests, requestContext } from '../data/requests.js'
 import { getBookingDates } from '../data/availability.js'
@@ -134,6 +135,7 @@ const validState = (state) => {
 }
 
 export const readBookingState = () => {
+  if(usingApi) return structuredClone({version:1,referenceDateId:remoteSnapshot().dashboardSummary.todayDateId,records:remoteSnapshot().records,customers:remoteSnapshot().customers,scheduleSeedDates:[]})
   const storage = getStorage()
   try {
     const raw = storage?.getItem(BOOKINGS_STORAGE_KEY)
@@ -152,6 +154,7 @@ export const readBookingState = () => {
 }
 
 export const saveBookingState = (state) => {
+  if(usingApi) return {success:false}
   try {
     const storage = getStorage()
     if (!storage || state.storageIssue || !validState(state)) return { success: false }
@@ -175,6 +178,7 @@ export const subscribeBookings = (onChange) => {
 }
 
 export const getScheduleBookings = (dateId, state = readBookingState()) => {
+  if(usingApi) return []
   if (!isValidDateId(dateId)) return []
   seedScheduleDate(state, dateId)
   return state.records.filter((record) => record.source === 'schedule-demo' && record.dateId === dateId).map(copy)

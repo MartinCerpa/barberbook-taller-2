@@ -43,7 +43,7 @@ export function ticketService(pool) {
           EXISTS(SELECT 1 FROM availability WHERE professional_id=$1 AND weekday=EXTRACT(DOW FROM now() AT TIME ZONE 'America/Santiago')
             AND start_minute <= EXTRACT(HOUR FROM now() AT TIME ZONE 'America/Santiago')*60+EXTRACT(MINUTE FROM now() AT TIME ZONE 'America/Santiago')
             AND end_minute >= EXTRACT(HOUR FROM now() AT TIME ZONE 'America/Santiago')*60+EXTRACT(MINUTE FROM now() AT TIME ZONE 'America/Santiago')+$2) AS working,
-          EXISTS(SELECT 1 FROM bookings WHERE professional_id=$1 AND status IN ('pending','confirmed')
+          EXISTS(SELECT 1 FROM bookings WHERE professional_id=$1 AND status='confirmed'
             AND tstzrange(starts_at,ends_at,'[)') && tstzrange(now(),now()+$2*interval '1 minute','[)')) AS booked,
           EXISTS(SELECT 1 FROM availability_blocks WHERE professional_id=$1
             AND tstzrange(starts_at,ends_at,'[)') && tstzrange(now(),now()+$2*interval '1 minute','[)')) AS blocked`, [module.professional_id,next.duration])

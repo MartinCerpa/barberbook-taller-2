@@ -9,11 +9,16 @@ export async function findBooking(client, id, lock = false) {
   return (await client.query(`${bookingSelect} WHERE b.id=$1 ${lock ? 'FOR UPDATE OF b' : ''}`, [id])).rows[0]
 }
 
-export async function customerId(client, customer) {
+export async function customerId(client, customer, professionalId) {
   const { randomUUID } = await import('node:crypto')
-  return (await client.query(`INSERT INTO users(id,name,phone,role) VALUES($1,$2,$3,'customer')
-    ON CONFLICT(phone) DO UPDATE SET phone=EXCLUDED.phone RETURNING id`,
-  [randomUUID(),customer.name,customer.phone])).rows[0].id
+  await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`${professionalId||'queue'}:${customer.name.toLowerCase()}:${customer.phone}`])
+  const existing=professionalId
+    ? await client.query(`SELECT u.id FROM users u JOIN professional_customers pc ON pc.customer_id=u.id WHERE pc.professional_id=$1 AND lower(u.name)=lower($2) AND u.phone=$3 LIMIT 1`,[professionalId,customer.name,customer.phone])
+    : await client.query("SELECT id FROM users WHERE role='customer' AND lower(name)=lower($1) AND phone=$2 LIMIT 1",[customer.name,customer.phone])
+  const id=existing.rows[0]?.id||randomUUID()
+  if(!existing.rowCount)await client.query("INSERT INTO users(id,name,phone,role) VALUES($1,$2,$3,'customer')",[id,customer.name,customer.phone])
+  if(professionalId)await client.query('INSERT INTO professional_customers(professional_id,customer_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[professionalId,id])
+  return id
 }
 
 export const ticketSelect = `SELECT t.*,t.customer_name_snapshot AS customer_name,s.name AS service,m.name AS module_name,

@@ -13,7 +13,7 @@ export const endpoints = [
   endpoint('get','/bookings/:id','bookingGet','Consultar una reserva',{ params,response: 'Booking' }),
   endpoint('patch','/bookings/:id/status','bookingStatus','Confirmar, rechazar, cancelar o cerrar una reserva',{ params,body: s.bookingStatus,response: 'Booking' }),
   endpoint('patch','/bookings/:id','bookingEdit','Modificar fecha, hora o duración; revalida conflictos',{ params,body: s.bookingEdit,response: 'Booking' }),
-  endpoint('get','/availability','availabilityGet','Horarios de 1 a 14 días según duración, jornada y ocupación',{ query: z.object({ professionalId: s.id,serviceId: s.id,startDate: s.dateId,days: z.coerce.number().int().min(1).max(14).default(14) }).strict(),response: 'Availability' }),
+  endpoint('get','/availability','availabilityGet','Horarios según duración, jornada y preferencias; los pendientes pueden competir',{ query: z.object({ professionalId: s.id,serviceId: s.id,startDate: s.dateId,days: z.coerce.number().int().min(1).max(30).default(14) }).strict(),response: 'Availability' }),
   endpoint('get','/availability/weekly','availabilityWeekly','Consultar horario semanal en minutos',{ query: z.object({ professionalId: s.id }).strict() }),
   endpoint('put','/availability','availabilitySet','Reemplazar intervalos de un día semanal; [] cierra el día',{ body: s.availabilityInput }),
   endpoint('get','/availability/blocks','blockList','Consultar bloqueos puntuales'),
