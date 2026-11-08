@@ -2,7 +2,9 @@
 
 La validación se realizó en Windows, dentro de `C:\Users\Martin\barberbook-taller-2`, rama `feature/hito3-fullstack`, sin clones, worktrees, push ni merges. Se utilizaron datos ficticios. Los resultados son verificaciones ejecutadas por Codex, no una revisión humana ni una calificación docente.
 
-## Resultados
+Los apartados iniciales conservan los resultados de la primera implementación. La sección «Recuperación del producto original» registra la validación posterior del panel recuperado y la autenticación; sus reglas y resultados sustituyen los límites anteriores.
+
+## Resultados de la implementación inicial
 
 | Verificación | Resultado observado |
 | --- | --- |
@@ -80,10 +82,49 @@ Volúmenes comprobados: `barberbook-hito3-academico_academic-postgres` y `barber
 
 No se encontraron errores de la configuración Compose. Una selección de sucursal en la automatización inicial esperó datos recién creados antes de la actualización periódica del panel; se continuó con el panel recién cargado y el recorrido aprobó. No fue necesario cambiar código de la aplicación ni sus pruebas existentes.
 
-## Pendientes y límites
+## Recuperación del producto original
+
+Se consultaron los documentos de decisiones, roadmap, feedback y seis guías de `MartinCerpa/BarberBook` en `main`, además del código original. No se modificó ese repositorio. El panel activo vuelve a usar sus componentes y estilos con datos reales: Tu jornada, Solicitudes, Agenda, Clientes, Finanzas, Servicios y Ajustes. La extensión FIFO conserva su código y datos en `#/academic/...`, fuera de la navegación principal y con permiso administrativo explícito.
+
+| Verificación posterior | Resultado ejecutado |
+| --- | --- |
+| `npm test` | 78 aprobadas; las 74 históricas permanecen intactas; integración omitida explícitamente en este comando |
+| `npm run test:integration` | 13 escenarios aprobados más el contenedor de suite: 14/14 según Node, sin omisiones |
+| `npm run test:e2e` | 7/7 aprobadas en Chromium con SQL/MongoDB reales y sin mocks operacionales |
+| `npm run lint`, `npm run build` | Sin advertencias de lint; build correcto, 93 módulos |
+| Compose | `config --quiet` y `up -d --build --wait` aprobados; cuatro servicios en ejecución, API y bases saludables |
+| Autenticación Docker | Login privado de Matías, panel protegido, logout SQL y posterior 401 ejecutados |
+| Swagger Docker | `GET /services` ejecutado desde Swagger UI de Nginx: HTTP 200 |
+
+Los siete E2E verifican:
+
+1. Perfil público de Matías sin selector único ni nombres técnicos; reserva sin cuenta, login, confirmación, Agenda y eventos reales.
+2. Resultado completado desde Agenda, historial del cliente y los tres períodos de Finanzas contrastados con el resumen del backend.
+3. Tarjetas Solicitudes, Próxima atención, Ingresos realizados y Abrir agenda; logout y rechazo de contraseña incorrecta.
+4. Guardado real de confirmación automática/manual, reserva automática, jornada, visibilidad de servicios y dos guardados manuales sucesivos del perfil.
+5. Emisión, llamado y finalización FIFO en la extensión académica separada.
+6. Operación real desde Swagger y documentación de autenticación.
+7. Perfil/panel en 390 × 844 sin desbordamiento horizontal, navegación, logout y error de red visible.
+
+La integración añade verificación de cookie HttpOnly/SameSite, CSRF, aislamiento entre profesionales y servicios personalizados, teléfono compartido por familiares, vencimiento, precio histórico, deshacer con restauración de competidoras y rechazo de reutilización, y conservación de intervalos al cerrar/reabrir días. Última base de integración: `barberbook_hito3_test_ed606976364c`. Cada suite sigue creando bases nuevas; no elimina bases ni volúmenes previos. El resultado histórico se prueba mediante una atención ficticia ya terminada, creada solo en la base aislada de pruebas: no se altera el reloj ni se relajan reglas de producción.
+
+Se corrigieron fallos detectados durante esta adaptación: el segundo guardado de perfil enviaba metadatos internos, y cerrar/reabrir un día perdía sus intervalos. La API protege también la propiedad de servicios personalizados y comprueba cada duración futura al editar jornadas. Las siete pruebas finales aprobaron después de las correcciones. Las solicitudes pendientes ahora compiten, conforme a las decisiones originales; confirmar una expira las solapadas, manteniendo la exclusión SQL para atenciones confirmadas.
+
+La ejecución adicional del frontend compilado en Docker creó desde React la reserva `a0df359f-0734-4f16-9eb4-c57ca5901cb9`, para el 10 de noviembre a las 11:00. Se confirmó en Solicitudes, apareció en Agenda y se consultó directamente como `confirmed` en PostgreSQL. MongoDB conservó sus dos documentos `booking.created` y `booking.confirmed`, y `/health` informó cero eventos pendientes. La reserva y el turno de la demostración anterior siguen con sus estados originales y sus cinco eventos: no se borraron datos para limpiar la presentación. Las seis migraciones quedaron aplicadas.
+
+Capturas posteriores revisadas visualmente, con datos ficticios:
+
+- [Tu jornada en Docker](evidencias/hito3-producto-dashboard.png).
+- [Panel original móvil en Docker](evidencias/hito3-producto-mobile.png).
+- [Nueva reserva en Agenda Docker](evidencias/hito3-producto-docker-agenda.png).
+- [Finanzas con una atención completada en base E2E](evidencias/hito3-producto-finanzas.png).
+
+Las capturas anteriores de fila e historial se conservan como evidencia de la primera etapa; no representan la navegación principal actual. Las credenciales iniciales solo se consultan en el archivo privado ignorado indicado en README y nunca se incluyen en capturas o resultados publicados.
+
+## Pendientes y límites actuales
 
 No quedan bloqueos de Docker en este equipo. El frontend queda disponible en `http://127.0.0.1:5174/`, la API en `http://127.0.0.1:3003/api` y Swagger en `http://127.0.0.1:3003/api/docs/`, con los contenedores en ejecución. La aplicación continúa limitada a localhost y datos académicos ficticios.
 
-Pendientes humanos: revisar personalmente el código y documentos, validar la pertinencia de la adaptación con el docente y realizar la defensa. La bitácora de IA debe completarse con correcciones y aprendizajes reales del estudiante. No se probó autenticación porque no está implementada; la aplicación se limita a un entorno académico local.
+Pendientes humanos: revisar personalmente el código y documentos, validar la pertinencia de la adaptación con el docente y realizar la defensa. La sección de IA del README se conserva sin modificaciones para que el estudiante la revise personalmente. Se verificó autenticación local; no se validó un despliegue público HTTPS, recuperación de contraseñas ni segundo factor.
 
-Las preferencias locales avanzadas del prototipo no se consideran migradas por pasar sus pruebas históricas. La lógica activa usa datos SQL, confirmación manual y transiciones documentadas; las pruebas antiguas acreditan conservación del código anterior, no integración de todas sus opciones en el servidor.
+Las pruebas históricas acreditan conservación del prototipo; los escenarios posteriores de integración y navegador acreditan las opciones conectadas al backend. No se importan datos locales antiguos ni se atribuye cobertura exhaustiva a funcionalidades no ejercitadas. La conservación del despliegue tras detener/iniciar corresponde a la prueba inicial documentada; la actualización posterior comprobó conservación de datos y construcción idempotente sin detener las bases.

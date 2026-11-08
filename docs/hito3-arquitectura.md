@@ -2,9 +2,11 @@
 
 ## Diagnóstico y continuidad
 
-El Taller 2 resolvía solicitudes de barbería con React, datos simulados y almacenamiento del navegador. Faltaban un servidor común, persistencia entre dispositivos, integridad ante concurrencia y trazabilidad centralizada. Se conserva el problema y la interfaz pública. El panel remoto reutiliza layout, tema y tarjetas, con componentes de gestión nuevos.
+El Taller 2 resolvía solicitudes de barbería con React y almacenamiento del navegador. Se recuperan su perfil y panel profesional originales: «Tu jornada», Solicitudes, Agenda, Clientes, Finanzas, Servicios y Ajustes. Sus adaptadores consultan y escriben en la API sin respaldo operacional local. PostgreSQL aporta persistencia e integridad; MongoDB, trazabilidad.
 
-Se amplía hacia el caso 3.3 del enunciado: una sucursal ofrece servicios; funcionarios/barberos atienden en módulos/sillones. Las reservas anticipadas y la fila presencial son procesos diferentes que comparten disponibilidad profesional. Es una justificación de continuidad, no una aprobación del docente.
+La fuente de producto es [BarberBook/main](https://github.com/MartinCerpa/BarberBook/tree/main), consultada sin modificarla: `docs/decisions.md`, `roadmap.md`, `user-feedback.md`; `skills/01-product-vision.md`, `02-ux-rules.md`, `03-frontend-design.md`, `04-architecture.md`, `05-testing.md`, `08-user-feedback.md` y código original. Se reutilizan sus componentes y estilos. El propietario informa aprobación de BarberBook en Taller 2; corresponde revisar con el docente la adaptación del Hito 3.
+
+Sucursales, módulos y fila FIFO responden al caso oficial 3.3 y permanecen en una extensión académica separada, con acceso administrativo. No dominan el Dashboard ni la navegación profesional; se conservan código y datos existentes.
 
 Historias priorizadas: como cliente, reservar un intervalo disponible; como barbero, decidir solicitudes y consultar agenda; como recepción, emitir y llamar turnos; como administrador, mantener sucursales y catálogos; como responsable, consultar espera, historial y eventos. Todos esos flujos tienen operaciones reales.
 
@@ -15,8 +17,11 @@ Historias priorizadas: como cliente, reservar un intervalo disponible; como barb
 | `src/pages/PublicBarberPage.jsx` | Perfil, selección de profesional y catálogo desde API |
 | `src/components/booking/BookingFlow.jsx` | Pasos originales conectados a HTTP |
 | `src/hooks/useApiAvailability.js` | Consulta asíncrona, cancelación y reintento |
-| `src/pages/ApiAdminPanel.jsx` | Carga y coordinación del panel remoto |
-| `src/components/fullstack/` | Formularios y gestión de reservas, fila, catálogos y jornadas |
+| `src/pages/AdminPanelPage.jsx` y páginas originales | Jornada, solicitudes, agenda, clientes, finanzas y ajustes desde API |
+| `src/components/ProfessionalGate.jsx` | Login, restauración de sesión y protección del panel |
+| `src/services/remoteState.js` | Copia remota en memoria, escrituras serializadas y actualización |
+| `src/pages/ApiAdminPanel.jsx`, `src/components/fullstack/` | Extensión académica separada |
+| `shared/financial.js` | Cálculos puros comunes; backend entrega resúmenes canónicos por período |
 | `src/services/api.js` | Fetch, JSON, errores y fecha de negocio |
 | `server/routes/` | Registro de endpoints y validación de entradas |
 | `server/controllers/` | Traducción de HTTP a servicios y códigos de éxito |
@@ -26,7 +31,7 @@ Historias priorizadas: como cliente, reservar un intervalo disponible; como barb
 | `server/config/` | Variables, aislamiento y conexiones |
 | `server/migrations/` | Cambios versionados y semilla reproducible |
 
-`App.jsx` usa `ApiAdminPanel`; no hay rutas activas al panel local histórico. No existe respaldo operacional en localStorage ante una falla de API. El portafolio decorativo y el tema visual conservan la implementación anterior.
+`App.jsx` monta el panel original bajo `ProfessionalGate`. Solo `#/academic/...` monta `ApiAdminPanel`. Los caminos locales históricos permanecen bajo las 74 pruebas Node, sin utilizarse como respaldo en el navegador. El portafolio decorativo y el tema visual conservan la implementación anterior.
 
 ## Modelo relacional
 
@@ -39,6 +44,11 @@ erDiagram
   professionals ||--o{ modules : atiende
   professionals ||--o{ availability : tiene
   professionals ||--o{ availability_blocks : bloquea
+  professionals ||--o{ services : configura
+  professionals ||--o{ professional_customers : relaciona
+  users ||--o{ professional_customers : pertenece
+  users ||--o| professional_credentials : autentica
+  professional_credentials ||--o{ professional_sessions : inicia
   users ||--o{ bookings : solicita
   services ||--o{ bookings : define
   professionals ||--o{ bookings : recibe
@@ -48,17 +58,17 @@ erDiagram
   professionals o|--o{ tickets : atiende
 ```
 
-Las entidades tienen PK y FK. Las FK compuestas impiden asociar profesionales, servicios y módulos de sucursales incompatibles. Los usuarios representan clientes o funcionarios; los roles no constituyen autenticación. El teléfono chileno normalizado identifica al cliente, mientras que el nombre ingresado se conserva por operación. Precio y duración son snapshots para no alterar atenciones históricas al editar servicios.
+Las entidades tienen PK y FK. Las FK compuestas impiden asociaciones de sucursales incompatibles. `professional_customers` mantiene historial y confianza por profesional; cada servicio tiene propietario profesional. Teléfono normalizado y nombre permiten recuperar su relación previa: no hay unicidad global de teléfono y familiares con nombres distintos son clientes separados. Precio y duración son snapshots que no cambian al editar servicios. Los clientes reservan sin cuenta.
 
 `availability` representa días semanales con intervalos de minutos. Una exclusión impide jornadas solapadas. `availability_blocks` contiene cierres puntuales. `bookings` guarda inicio/término en `timestamptz`; se convierten las entradas locales usando `AT TIME ZONE 'America/Santiago'`, independientemente del huso del contenedor.
 
-Una exclusión GiST sobre profesional e intervalo `[inicio,fin)` protege reservas pendientes, confirmadas, completadas e inasistencias. Permite intervalos adyacentes y rechaza solapados. Rechazar/cancelar libera el intervalo. CHECK valida duración, precio y estados. Los módulos y profesionales tienen índices únicos parciales para admitir solo un turno llamado simultáneamente.
+Una exclusión GiST sobre profesional e intervalo `[inicio,fin)` protege atenciones confirmadas, completadas e inasistencias. Las pendientes pueden competir: confirmar una expira las solapadas. Permite intervalos adyacentes y rechaza solapados. Rechazar/cancelar libera el intervalo. CHECK valida duración, precio y estados. Los módulos y profesionales admiten solo un turno llamado simultáneamente.
 
-Las migraciones 001 (estructura), 002 (semilla) y 003 (nombres históricos) se registran en `schema_migrations`. Se aplican bajo un bloqueo y una transacción; reiniciar no reinicializa ni borra operaciones.
+Las migraciones 001–003 conservan estructura, semilla e historia; 004 incorpora autenticación, propiedad profesional, preferencias y deshacer; 005 distingue solicitudes de atenciones realmente confirmadas; 006 conserva intervalos de días desactivados y corrige la descripción inicial al restaurar el perfil. Se registran en `schema_migrations` bajo bloqueo y transacción; reiniciar no reinicializa ni borra operaciones ni volúmenes.
 
 ## Estados y concurrencia
 
-Una reserva debe ser futura, dentro de 60 días y caber completa en la jornada. La UI ofrece 14 días con inicios cada 15 minutos. Bloqueos, reservas ocupantes y atenciones presenciales incompatibles impiden solicitar/reprogramar. El servidor revalida todas las escrituras; el estado de la pantalla no es autoridad.
+Una reserva debe ser futura, cumplir la anticipación mínima y caber completa en la jornada. El horizonte configurable es 7, 14 o 30 días; la oferta pública mantiene inicios cada 60 minutos desde cada intervalo. Bloqueos, atenciones ocupantes y turnos incompatibles impiden solicitar/reprogramar. El servidor revalida todas las escrituras.
 
 ```mermaid
 stateDiagram-v2
@@ -66,12 +76,17 @@ stateDiagram-v2
   pending --> confirmed
   pending --> rejected
   pending --> cancelled
+  pending --> expired
   confirmed --> cancelled
   confirmed --> completed
   confirmed --> no_show
 ```
 
-Los estados terminales no vuelven a pendiente. Repetir el mismo estado no agrega otro evento. Completar exige alcanzar el término previsto; inasistencia exige 15 minutos desde el inicio. Solo pendiente/confirmada admite reprogramación. Cambiar la jornada de un día semanal con reservas futuras devuelve 409 y conserva compromisos.
+Repetir el mismo estado no agrega otro evento. Completar exige alcanzar el término previsto; inasistencia exige 15 minutos desde el inicio. Solo pendiente/confirmada admite reprogramación. Deshacer confirmación, rechazo o cancelación requiere token propio, máximo dos minutos y versiones sin cambios posteriores; restaura competidoras y deja trazabilidad. No deshace resultados completados o inasistencias. La jornada profesional valida la cobertura de cada reserva futura; la extensión académica mantiene una protección más restrictiva por día semanal.
+
+La confirmación puede ser manual o automática; un cliente con aprobación manual obligatoria nunca se confirma automáticamente. Dos inasistencias activan esa condición y el profesional puede rehabilitarlo. Las solicitudes pueden vencer en 15, 30, 60 minutos o no vencer. Se registran cancelaciones tardías. Finanzas usa precio histórico y zona de Chile, con períodos Hoy/Esta semana/Este mes: solo completadas generan ingresos.
+
+Preferencias, jornada y servicios tienen guardado validado. Cerrar y reabrir un día conserva sus intervalos. El perfil se guarda manualmente y solo admite campos editables, sin metadatos internos.
 
 ```mermaid
 stateDiagram-v2
@@ -127,4 +142,12 @@ Swagger deriva las rutas y entradas del mismo registro que usa Express; añade m
 
 ## Navegación y operación
 
-Se mantienen `#inicio` y `#/panel/requests`, `schedule`, `clients`, `settings`; se incorporan `queue`, `history`, `services`, `finances`. Cada acción invoca una operación real y vuelve a consultar el servidor. Una falla de eventos no impide usar los recursos SQL ya cargados. No se implementa seguridad de producción; la demostración se limita a localhost y datos ficticios.
+El recorrido principal usa `#inicio` y `#/panel/dashboard`, `requests`, `schedule`, `clients`, `settings`, `services`, `finances`. Las tarjetas de Tu jornada enlazan Solicitudes, Agenda y Finanzas. Cada acción escribe en el servidor y vuelve a consultar. Matías es el perfil público principal; no hay selector si solo existe uno activo y público. Los registros técnicos permanecen en la base sin aparecer en el perfil.
+
+## Autenticación y alcance
+
+`professional_credentials` guarda email y hash scrypt con sal aleatoria. `professional_sessions` almacena solo el hash del token de sesión, CSRF y vencimiento de ocho horas. Cookie HttpOnly/SameSite Strict, revocación SQL en logout y token CSRF en escrituras. Login limita intentos fallidos; en localhost se admite HTTP. Un despliegue HTTPS debe activar cookie Secure. No se implementan recuperación de contraseña ni segundo factor.
+
+`/api/auth/login`, `/session` y `/logout` gestionan acceso. `/api/professional/state` entrega exclusivamente datos propios; `/preferences`, `/hours`, `/profile`, `/services`, `/customers/:id/trust`, `/slots` y `/undo` validan las escrituras. Consultas y mutaciones de reservas, clientes y eventos se filtran por profesional; recursos de la extensión requieren permiso administrativo. Sin sesión se devuelve 401; CSRF/permiso inválido, 403; límite de login, 429. Swagger documenta cookie y cabecera CSRF.
+
+`npm run auth:setup` genera la contraseña inicial de Matías en un archivo privado ignorado. No hay contraseña predeterminada en el repositorio. La demostración sigue limitada a localhost y datos ficticios; ver README para habilitar expresamente la extensión académica sin cambiar la contraseña.
