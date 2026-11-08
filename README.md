@@ -293,8 +293,16 @@ La documentación enlazada conserva también evidencia de etapas anteriores; dis
 
 ## Uso de Inteligencia Artificial
 
-Se utilizó **OpenAI Codex** para analizar los documentos entregados, implementar API, migraciones, integración React, Compose, pruebas y documentación.
+Durante el desarrollo de BarberBook se utilizaron **Codex y ChatGPT** como herramientas de apoyo para planificar, implementar, depurar y verificar distintas partes del proyecto.
 
-Prompt representativo del usuario: «Transformar BarberBook del Taller 2 en una plataforma Full Stack funcional, manteniendo las reservas para barberías como núcleo», con Express, PostgreSQL, MongoDB, Swagger y Docker, sin cambiar de repositorio ni hacer push o merges.
+**Propósito:** facilitar la evolución del frontend desarrollado en el Taller 2 hacia una arquitectura Full Stack, incorporando una API REST, persistencia PostgreSQL y MongoDB, autenticación profesional, documentación Swagger y ejecución mediante Docker Compose.
 
-Resultado: persistencia real, interfaz integrada, pruebas y documentación. Codex ejecutó verificaciones automáticas y revisó capturas; esto **no sustituye validación humana**. La revisión de código, correcciones personales, decisiones comprendidas y aprendizajes del estudiante quedan pendientes de registrar después de su revisión. No se atribuyen aprendizajes ni una defensa que no hayan ocurrido.
+**Ejemplo de instrucción utilizada:** se solicitó conservar el diseño, las funcionalidades y las decisiones originales de BarberBook, integrando la nueva arquitectura Full Stack sin reemplazar su propósito como plataforma de reservas para barberías.
+
+**Resultados:** las herramientas apoyaron la implementación del backend, la integración con React, las pruebas automatizadas y la documentación técnica.
+
+**Validación y decisiones del estudiante:** se revisó personalmente la aplicación y se solicitaron correcciones para recuperar el panel profesional original y su navegación. También se comprobó el inicio y cierre de sesión, la reserva pública, la confirmación de solicitudes, su aparición en la agenda y el funcionamiento de las secciones Clientes, Servicios y Ajustes.
+
+La actualización de Finanzas al completar una atención no fue verificada manualmente y queda respaldada únicamente por las verificaciones automatizadas reportadas, pendientes de revisión independiente.
+
+**Aprendizaje personal:** Comprender mejor cómo se comunican React y el backend, cómo se guardan los datos o para qué sirven PostgreSQL y MongoDB.
