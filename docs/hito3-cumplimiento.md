@@ -21,7 +21,7 @@ Fuentes leídas: `Enunciado_Hito_3_Desarrollo_Web_Movil.docx` y `Rubrica taller 
 | 3. Separación frontend | 5 | Completado | Cliente HTTP, hook de disponibilidad, páginas y componentes específicos; App no monta el panel local histórico |
 | 4. Flujo end-to-end | 6 | Completado | React → Express → PostgreSQL → outbox/MongoDB → historial; captura y pruebas `e2e/fullstack.spec.js` |
 | 4. Pruebas y validaciones | 5 | Completado | 78 pruebas aprobadas, suite real de integración 9/9, E2E 5/5, lint/build; alcance exacto en validación |
-| 4. Docker y reproducibilidad | 5 | Parcial | Compose y Dockerfiles entregados; ejecución nativa reproducida. **Falta Docker y validar contenedores reales** |
+| 4. Docker y reproducibilidad | 5 | Completado | `docker compose config --quiet`, construcción, cuatro servicios operativos, flujos desde React y Swagger; persistencia SQL/Mongo tras detener y reiniciar sin borrar volúmenes. Evidencia en `hito3-validacion.md` |
 | 4. Git y colaboración | 4 | Parcial | Misma carpeta/rama, historia y commits descriptivos. Sin push/PR nuevo/merge por restricción; no se inventan contribuciones |
 | 4. README y documentación | 3 | Completado | README, arquitectura, modelo, API, entorno, datos, pruebas, límites y guion; archivo histórico preservado |
 | 4. Uso de IA | 3 | Parcial | Herramienta, prompt, resultados y verificación automática documentados. Revisión, correcciones y aprendizaje humanos pendientes |
@@ -41,4 +41,4 @@ Fuentes leídas: `Enunciado_Hito_3_Desarrollo_Web_Movil.docx` y `Rubrica taller 
 | NoSQL del caso | Eventos de estado y trazabilidad en MongoDB consultados desde API y frontend |
 | API pública complementaria | Nager.Holidays conservada, con carga, error y reintento; consulta real HTTP 200 |
 
-No se estima una nota ni se declaran los 100 puntos obtenidos. Docker, revisión humana, defensa y eventual publicación autorizada deben resolverse antes de presentar la entrega como completamente validada.
+No se estima una nota ni se declaran los 100 puntos obtenidos. La revisión humana, defensa y eventual publicación autorizada deben resolverse antes de presentar la entrega como completamente validada.

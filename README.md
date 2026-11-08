@@ -42,7 +42,7 @@ Versiones verificadas: Node 24.20, React 19.2, Vite 8.3, Express 5.3, PostgreSQL
 
 ## Docker Compose
 
-Requiere Docker Engine con Compose v2 o Docker Desktop iniciado. **Docker no estaba instalado en este equipo:** la configuración se entrega, pero el levantamiento real de Compose queda pendiente. La ejecución nativa con ambas bases reales sí fue probada.
+Requiere Docker Engine con Compose v2 o posterior, o Docker Desktop iniciado con motor Linux. **Compose fue validado el 8 de noviembre de 2026:** se construyeron y levantaron React/Nginx, Express, PostgreSQL y MongoDB. Se probaron reservas, agenda, turnos, eventos, un conflicto horario y una operación desde Swagger. Los datos sobrevivieron a detener y volver a iniciar los cuatro servicios sin eliminar volúmenes. Ver [resultados y evidencias](docs/hito3-validacion.md).
 
 ```powershell
 Copy-Item .env.example .env  # solo si todavía no existe .env
@@ -129,7 +129,6 @@ Ver [resultados](docs/hito3-validacion.md), [matriz de los 100 puntos](docs/hito
 ## Limitaciones
 
 - Panel académico sin autenticación ni sesiones; `users.role` modela actores. Mantenerlo en localhost y usar datos ficticios.
-- Docker pendiente de instalación/inicio y ejecución real por el usuario.
 - Preferencias operacionales locales antiguas, aprobación automática, penalizaciones y deshacer no se trasladan automáticamente al servidor. El flujo actual usa confirmación manual y transiciones explícitas; el código anterior permanece preservado.
 - El panel consulta hasta 500 reservas, turnos y clientes; muestra 100 eventos e hitos recientes. No tiene paginación avanzada. Las métricas son acumuladas sobre toda la base SQL.
 - Sin pagos, mensajería, notificaciones push ni aplicación React Native; esta última corresponde al Hito 4.

@@ -16,7 +16,7 @@ La validación se realizó en Windows, dentro de `C:\Users\Martin\barberbook-tal
 | `git diff --check` | Sin errores de espacios |
 | `/api/health` local | HTTP 200, PostgreSQL/MongoDB `connected`, cero eventos pendientes |
 | Nager.Holidays, consulta externa real de CL/2026 | HTTP 200, 17 registros |
-| Compose | YAML leído y cuatro servicios declarados; **no se ejecutó Docker** |
+| Compose | `config --quiet` aprobado, imágenes construidas y cuatro servicios iniciados; pruebas funcionales y persistencia tras reinicio aprobadas, detalladas más abajo |
 
 Se corrigieron durante el desarrollo un conflicto de tipado de parámetros SQL y selectores de pruebas de navegador. Las pruebas finales aprobaron después de esas correcciones; no se modificaron las 74 pruebas históricas para ocultar fallos.
 
@@ -51,9 +51,38 @@ Capturas de ejecución real de las pruebas, copiadas a `docs/evidencias/` y revi
 
 Las capturas proceden de bases E2E, no de la base de demostración normal. Las trazas y capturas de fallos se generan en `test-results/`, excluido de Git. Los datos operacionales de demostración no se usan como evidencia inventada.
 
+## Validación adicional con Docker Compose
+
+Después de habilitar SVM, reiniciar Windows e instalar Docker Desktop/WSL, el motor respondió como Linux. Docker Engine 29.9.2 y Compose 5.6.1 ejecutaron la configuración existente, sin cambios funcionales ni de infraestructura. Las imágenes ejecutaron Node 24.22.2, PostgreSQL 18.6 y MongoDB 8.0.34. No hubo puertos ocupados por la ejecución nativa tras el reinicio.
+
+Se ejecutaron `docker compose config --quiet`, `docker compose up -d --build`, `docker compose ps`, revisión de logs y healthchecks. PostgreSQL, MongoDB y Express quedaron saludables; React/Nginx respondió HTTP 200. `/api/health` devolvió ambas bases conectadas y cero eventos pendientes. Las tres migraciones quedaron aplicadas en la base académica del contenedor.
+
+La prueba de navegador utilizó el frontend compilado servido por Nginx en 5174, no el servidor Vite de pruebas. Se ejecutaron estos pasos contra los contenedores reales:
+
+1. Consultar servicios y profesionales desde React.
+2. Crear la reserva `2ce66941-65d1-4b98-9926-9d633dbfa6a5` desde el formulario público y verificar su estado pendiente con una consulta PostgreSQL.
+3. Confirmarla desde Solicitudes, comprobar el estado SQL y verla en Agenda para el 10 de noviembre de 2026 a las 10:00.
+4. Consultar sus eventos `booking.created` y `booking.confirmed` desde React/API y directamente en MongoDB.
+5. Intentar otra reserva en el mismo intervalo y obtener HTTP 409 por solapamiento.
+6. Crear datos ficticios adicionales para una sucursal, profesional, servicio de cinco minutos y módulo de demostración. Configurar una jornada para ese profesional mediante la API, sin modificar la jornada original de Matías.
+7. Emitir, llamar, asignar y finalizar el turno `32bda4da-04e2-4ecf-9e04-ea8ba9c0f3b6` desde React; comprobar estado finalizado en PostgreSQL y eventos `ticket.issued`, `ticket.called` y `ticket.completed` en MongoDB.
+8. Ejecutar `GET /services` desde Swagger UI, servido a través de Nginx, y obtener HTTP 200 con datos reales. No se observaron excepciones JavaScript en estos recorridos.
+
+Se ejecutaron nuevamente `npm test` (78 aprobadas y la integración omitida explícitamente), `npm run test:integration` (9/9), `npm run lint` (sin advertencias) y `npm run build` (correcto). La suite de integración utilizó las bases Docker reales con una base nueva aislada `barberbook_hito3_test_be3894b87810`; no borró ni reinicializó las bases existentes. En los logs PostgreSQL quedaron dos rechazos esperados de estas pruebas negativas: una FK de módulos y la exclusión de reservas solapadas. Los cinco E2E previos corresponden a la validación inicial; los pasos anteriores documentan la prueba adicional sobre el despliegue Docker.
+
+Para verificar persistencia y repetibilidad, se detuvieron los cuatro servicios con `docker compose stop --timeout 15` y se iniciaron otra vez con `docker compose up -d --wait --wait-timeout 120`. Se verificaron la misma reserva confirmada, el mismo turno finalizado y los cinco eventos MongoDB, una sola vez cada uno. Las URLs volvieron a responder y el outbox quedó sin pendientes. No se utilizó `down -v`, no se eliminaron volúmenes y no se detuvieron aplicaciones de otros proyectos.
+
+Volúmenes comprobados: `barberbook-hito3-academico_academic-postgres` y `barberbook-hito3-academico_academic-mongo`. Los datos ficticios de la demostración se conservan para revisión personal. Capturas de esta ejecución Docker:
+
+- [Reserva confirmada en Agenda](evidencias/hito3-docker-agenda.png).
+- [Turno finalizado desde React](evidencias/hito3-docker-turno.png).
+- [Operación ejecutada desde Swagger](evidencias/hito3-docker-swagger.png).
+
+No se encontraron errores de la configuración Compose. Una selección de sucursal en la automatización inicial esperó datos recién creados antes de la actualización periódica del panel; se continuó con el panel recién cargado y el recorrido aprobó. No fue necesario cambiar código de la aplicación ni sus pruebas existentes.
+
 ## Pendientes y límites
 
-Docker no se encontró en PATH ni en la ruta habitual de Docker Desktop. Se entregan Dockerfiles, red/volúmenes aislados, healthchecks y Compose, pero no se afirma que sus imágenes hayan sido construidas o que los contenedores hayan iniciado. Instalar/iniciar Docker Desktop con Compose y ejecutar `docker compose up --build -d`; comprobar `docker compose ps`, salud y los flujos desde React. Detener antes la modalidad nativa para liberar los mismos puertos.
+No quedan bloqueos de Docker en este equipo. El frontend queda disponible en `http://127.0.0.1:5174/`, la API en `http://127.0.0.1:3003/api` y Swagger en `http://127.0.0.1:3003/api/docs/`, con los contenedores en ejecución. La aplicación continúa limitada a localhost y datos académicos ficticios.
 
 Pendientes humanos: revisar personalmente el código y documentos, validar la pertinencia de la adaptación con el docente y realizar la defensa. La bitácora de IA debe completarse con correcciones y aprendizajes reales del estudiante. No se probó autenticación porque no está implementada; la aplicación se limita a un entorno académico local.
 
