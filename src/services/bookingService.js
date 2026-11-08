@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot,remoteMutation } from './remoteState.js'
 import {
   FINAL_OUTCOMES, findOrCreateCustomer, readBookingState,
   readStateForAppointment, saveBookingState, subscribeBookings,
@@ -38,6 +39,7 @@ export const expirePendingRequests = (now = new Date()) => {
 }
 
 export const getRequestsSnapshot = (now = new Date()) => {
+  if(usingApi) return remoteSnapshot().records
   const state = readBookingState()
   if (expireRequestsInState(state, now)) saveBookingState(state)
   return state.records
@@ -123,6 +125,7 @@ const confirmRequestInState = (state, current, now, { origin = 'manual', undoabl
 }
 
 export const createBooking = async (bookingData, now = new Date()) => {
+  if(usingApi) return remoteMutation('/bookings',{...bookingData,professionalId:bookingData.professionalId||remoteSnapshot().professional.id},'POST')
   const phone = normalizeCustomerPhone(bookingData.customer?.phone)
   const name = bookingData.customer?.name?.trim()
   if (!phone || !name || name.length < 2 || name.length > 100 ||
@@ -173,6 +176,7 @@ export const createBooking = async (bookingData, now = new Date()) => {
 }
 
 export const acceptRequest = (bookingId, now = new Date()) => {
+  if(usingApi) return remoteMutation(`/bookings/${bookingId}/status`,{status:'confirmed'},'PATCH')
   const state = readBookingState()
   const expiredChanged = expireRequestsInState(state, now)
   const current = state.records.find((record) => record.id === bookingId)
@@ -211,6 +215,7 @@ export const getAppointmentOutcomeOptions = (appointment, now = new Date()) => {
 }
 
 export const recordAppointmentOutcome = ({ appointmentId, outcome }, now = new Date()) => {
+  if(usingApi) return remoteMutation(`/bookings/${appointmentId.replace(/^appointment-/, '')}/status`,{status:outcome},'PATCH')
   if (!FINAL_OUTCOMES.includes(outcome)) return failure('Resultado de atención inválido.')
   const state = readStateForAppointment(appointmentId)
   const current = state.records.find((record) => record.appointmentId === appointmentId)
@@ -237,6 +242,7 @@ export const recordAppointmentOutcome = ({ appointmentId, outcome }, now = new D
 }
 
 export const updateBookingStatus = (bookingId, status) => {
+  if(usingApi) return remoteMutation(`/bookings/${bookingId}/status`,{status},'PATCH')
   if (status === 'confirmed') return acceptRequest(bookingId)
   const state = readBookingState()
   const current = state.records.find((record) => record.id === bookingId)
@@ -254,6 +260,7 @@ export const updateBookingStatus = (bookingId, status) => {
 }
 
 export const undoBookingChange = (token) => {
+  if(usingApi) return remoteMutation('/professional/undo',token,'POST')
   const state = readBookingState()
   const entries = Array.isArray(token?.records) && token.records.length > 0
     ? token.records
@@ -287,6 +294,7 @@ export const undoBookingChange = (token) => {
 }
 
 export const updateBookingDetails = (bookingId, changes) => {
+  if(usingApi) return remoteMutation(`/bookings/${bookingId}`,changes,'PATCH')
   const state = readBookingState()
   const current = state.records.find((record) => record.id === bookingId)
   if (!current || !['pending', 'confirmed'].includes(current.status)) return failure('Esta reserva ya no admite cambios.')

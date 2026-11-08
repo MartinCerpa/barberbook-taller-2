@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot,remoteMutation } from './remoteState.js'
 import { DEFAULT_BOOKING_HORIZON_DAYS } from '../data/availability.js'
 
 export const RESERVATION_PREFERENCES_STORAGE_KEY = 'barberbook-taller-2:reservation-preferences:v1'
@@ -49,6 +50,7 @@ const isCompleteValidPreferences = (value) => value && value.version === 1 &&
   BOOKING_HORIZON_OPTIONS.includes(value.bookingHorizonDays)
 
 export const getReservationPreferences = () => {
+  if(usingApi) return remoteSnapshot().preferences
   try {
     const storedValue = getStorage()?.getItem(RESERVATION_PREFERENCES_STORAGE_KEY)
     return storedValue
@@ -60,6 +62,7 @@ export const getReservationPreferences = () => {
 }
 
 export const saveReservationPreferences = (value) => {
+  if(usingApi) return remoteMutation('/professional/preferences',value)
   const preferences = sanitizeReservationPreferences(value)
   if (!isCompleteValidPreferences(value)) return { success: false, preferences: null }
   try {

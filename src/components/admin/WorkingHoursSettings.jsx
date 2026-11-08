@@ -61,7 +61,7 @@ function WorkingHoursSettings({ onBack }) {
     setErrors((current) => ({ ...current, [dayId]: null }))
   }
 
-  const persistDay = (dayId, nextDay) => {
+  const persistDay = async (dayId, nextDay) => {
     const savedDay = savedHoursRef.current.days.find((day) => day.day === dayId)
 
     if (!savedDay || JSON.stringify(savedDay) === JSON.stringify(nextDay)) {
@@ -73,7 +73,7 @@ function WorkingHoursSettings({ onBack }) {
     setFeedback({ type: 'saving', message: 'Guardando...' })
 
     const candidate = replaceDay(savedHoursRef.current, dayId, nextDay)
-    const result = saveWorkingHours(candidate)
+    const result = await saveWorkingHours(candidate)
 
     if (!result.success) {
       if (result.errors[dayId]) {

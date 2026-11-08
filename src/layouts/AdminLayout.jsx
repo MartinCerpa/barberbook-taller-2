@@ -1,7 +1,8 @@
-import { Fragment } from 'react'
+import { Fragment,useState } from 'react'
 import Brand from '../components/Brand'
 import Sidebar from '../components/admin/Sidebar'
 import ThemeToggle from '../components/ThemeToggle'
+import { logoutProfessional,remoteSnapshot } from '../services/remoteState.js'
 
 const sectionLabels = {
   dashboard: 'Inicio',
@@ -11,9 +12,12 @@ const sectionLabels = {
   finances: 'Finanzas',
   services: 'Servicios',
   settings: 'Configuración',
+  queue: 'Turnos',
+  history: 'Historial',
 }
 
 function AdminLayout({ activeSection, children, navigationKey, onNavigate }) {
+  const [logoutError,setLogoutError]=useState(null)
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
@@ -30,7 +34,7 @@ function AdminLayout({ activeSection, children, navigationKey, onNavigate }) {
         <div className="admin-sidebar__footer">
           <span className="admin-avatar" aria-hidden="true">M</span>
           <div>
-            <strong>Matías</strong>
+            <strong>{remoteSnapshot().professional.name}</strong>
             <span>Profesional independiente</span>
           </div>
           <a href="#inicio">Ver perfil público</a>
@@ -48,10 +52,12 @@ function AdminLayout({ activeSection, children, navigationKey, onNavigate }) {
               Ver perfil público
             </a>
             <ThemeToggle />
+            <button className="professional-logout" type="button" onClick={()=>logoutProfessional().catch(()=>setLogoutError('No pudimos cerrar la sesión. Inténtalo de nuevo.'))}>Cerrar sesión</button>
           </div>
         </header>
 
         <main className="admin-main">
+          {logoutError&&<p className="form-error" role="alert">{logoutError}</p>}
           <Fragment key={navigationKey}>{children}</Fragment>
         </main>
       </div>

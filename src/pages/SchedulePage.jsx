@@ -68,9 +68,9 @@ function SchedulePage({
     nextAppointment,
   } = getDailyOperationsSummary(timelineItems, selectedDateId)
 
-  const updateAvailability = (slot) => {
+  const updateAvailability = async (slot) => {
     // Aplica un bloqueo o habilitación solo a la fecha seleccionada.
-    const result = availabilityActions[slot.action]?.(selectedDateId, slot.time, dayRequests)
+    const result = await availabilityActions[slot.action]?.(selectedDateId, slot.time, dayRequests)
 
     if (!result?.success) {
       setAvailabilityFeedback({

@@ -165,13 +165,13 @@ function ProfileSettingsView({ onBack }) {
     [formData, savedData],
   )
 
-  const saveProfileChanges = useCallback(() => {
+  const saveProfileChanges = useCallback(async () => {
     if (!formData.name.trim()) {
       setErrors({ name: 'Ingresa el nombre que verán tus clientes.' })
       return false
     }
 
-    const result = saveProfilePreferences(formData)
+    const result = await saveProfilePreferences(formData)
 
     if (!result.success) {
       setFeedback({
@@ -311,8 +311,8 @@ function ProfileSettingsView({ onBack }) {
     saveProfileChanges()
   }
 
-  const saveAndNavigate = () => {
-    if (saveProfileChanges()) {
+  const saveAndNavigate = async () => {
+    if (await saveProfileChanges()) {
       completePendingNavigation()
     }
   }
@@ -349,7 +349,7 @@ function ProfileSettingsView({ onBack }) {
   }
 
   const restoreOriginalProfile = async () => {
-    if (!clearProfilePreferences()) {
+    if (!await clearProfilePreferences()) {
       setFeedback({
         type: 'error',
         message: 'No pudimos restaurar el perfil en este navegador.',

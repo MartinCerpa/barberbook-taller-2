@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot } from './remoteState.js'
 import { business } from '../data/business.js'
 import { professional } from '../data/professional.js'
 import { getProfilePreferences } from './profilePreferencesService.js'
@@ -23,6 +24,7 @@ const copyProfessional = (value = professional) => ({
 })
 
 const getCurrentProfessional = () => {
+  if(usingApi) return remoteSnapshot().professional
   const preferences = getProfilePreferences()
   const currentProfessional = copyProfessional()
 

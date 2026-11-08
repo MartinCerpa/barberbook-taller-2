@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usingApi,remoteSnapshot } from '../services/remoteState.js'
 import {
   FINANCIAL_PERIODS,
   getFinancialSummary,
@@ -10,7 +11,7 @@ const formatCount = (value, singular, plural) =>
 
 function FinancesPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('today')
-  const summary = getFinancialSummary(selectedPeriod)
+  const summary = usingApi?remoteSnapshot().financial[selectedPeriod]:getFinancialSummary(selectedPeriod)
   const hasCompletedServices = summary.completedServices > 0
 
   return (

@@ -1,5 +1,7 @@
 # Guía breve para la defensa
 
+> **Documento histórico del Taller Evaluado 2.** Describe el estado anterior de BarberBook, cuando todavía no existía un backend propio. Para la implementación actual, consulta el [guion de defensa del Hito 3](hito3-defensa.md).
+
 ## ¿Qué es BarberBook?
 
 BarberBook es una aplicación React que permite demostrar dos recorridos: un cliente solicita una hora y un profesional revisa esa solicitud en su panel. Busca ordenar reservas que normalmente se coordinan mediante mensajes.
