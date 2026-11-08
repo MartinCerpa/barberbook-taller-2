@@ -1,5 +1,7 @@
 # Validación de la versión académica
 
+> **Documento histórico del Taller Evaluado 2.** Describe el estado anterior de BarberBook, cuando todavía no existía un backend propio. Para la implementación actual, consulta la [validación del Hito 3](hito3-validacion.md).
+
 Última ejecución automatizada: 20 de octubre de 2026.
 
 ## Qué se probó
