@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot,remoteMutation } from './remoteState.js'
 import {
   FINAL_OUTCOMES, findOrCreateCustomer, readBookingState, saveBookingState, subscribeBookings,
 } from './bookingRepository.js'
@@ -43,6 +44,7 @@ export const getClientSummary = (customerId, now = new Date()) => {
   return customer ? summaryFromState(state, customer, now) : null
 }
 export const getCustomersSnapshot = (now = new Date()) => {
+  if(usingApi) return remoteSnapshot().customers
   const state = readBookingState()
   return state.customers.map((customer) => summaryFromState(state, customer, now))
 }
@@ -59,6 +61,7 @@ export const createCustomer = async (customerData) => {
 }
 
 export const setClientTrustStatus = (customerId, trustStatus) => {
+  if(usingApi) return remoteMutation(`/professional/customers/${customerId}/trust`,{trustStatus},'PATCH')
   if (!['normal', 'requires_manual_approval'].includes(trustStatus)) return { success: false }
   const state = readBookingState()
   const customer = state.customers.find((item) => item.id === customerId)

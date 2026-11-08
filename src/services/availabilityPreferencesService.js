@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot } from './remoteState.js'
 export const BLOCKED_SLOTS_STORAGE_KEY = 'barberbook-taller-2:blocked-slots:v1'
 export const ENABLED_SLOTS_STORAGE_KEY = 'barberbook-taller-2:enabled-slots:v1'
 export const AVAILABILITY_CHANGE_EVENT = 'barberbook-taller-2:availability-change'
@@ -109,9 +110,9 @@ const writeSlots = (key, value) => {
   }
 }
 
-export const getBlockedSlots = () => readSlots(BLOCKED_SLOTS_STORAGE_KEY)
+export const getBlockedSlots = () => usingApi?remoteSnapshot().blocks:readSlots(BLOCKED_SLOTS_STORAGE_KEY)
 export const saveBlockedSlots = (value) => writeSlots(BLOCKED_SLOTS_STORAGE_KEY, value)
-export const getEnabledSlots = () => readSlots(ENABLED_SLOTS_STORAGE_KEY)
+export const getEnabledSlots = () => usingApi?remoteSnapshot().enabled:readSlots(ENABLED_SLOTS_STORAGE_KEY)
 export const saveEnabledSlots = (value) => {
   const { success, blockedSlots } = writeSlots(ENABLED_SLOTS_STORAGE_KEY, value)
   return { success, enabledSlots: blockedSlots }

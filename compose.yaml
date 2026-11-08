@@ -1,0 +1,63 @@
+name: barberbook-hito3-academico
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: barberbook_hito3
+      POSTGRES_USER: ${POSTGRES_USER:?Configura POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configura POSTGRES_PASSWORD en .env}
+    ports: ["127.0.0.1:55433:5432"]
+    volumes: ["academic-postgres:/var/lib/postgresql"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d barberbook_hito3"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [academic]
+  mongo:
+    image: mongo:8.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:?Configura MONGO_USER en .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?Configura MONGO_PASSWORD en .env}
+    ports: ["127.0.0.1:27028:27017"]
+    volumes: ["academic-mongo:/data/db"]
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand({ping:1}).ok' | grep 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [academic]
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/barberbook_hito3
+      MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/?authSource=admin
+      MONGODB_DATABASE: barberbook_hito3
+      API_HOST: 0.0.0.0
+      API_PORT: 3003
+      FRONTEND_ORIGIN: http://localhost:5174
+    ports: ["127.0.0.1:3003:3003"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3003/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [academic]
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports: ["127.0.0.1:5174:80"]
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [academic]
+networks:
+  academic:
+volumes:
+  academic-postgres:
+  academic-mongo:

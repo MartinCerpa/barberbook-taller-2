@@ -1,0 +1,10 @@
+node_modules
+.git
+.env
+.env.*
+!.env.example
+.runtime
+.codex-tmp
+dist
+test-results
+playwright-report

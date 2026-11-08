@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usingApi,remoteSnapshot } from '../services/remoteState.js'
 import { requestContext } from '../data/requests'
 import {
   getAppointments, getRequestsSnapshot, subscribeBookings, undoBookingChange,
@@ -43,7 +44,7 @@ function AdminPanelPage({ activeSection, navigationKey, onNavigate }) {
   const dashboardNow = new Date()
   const todayDateId = getLocalDateId(dashboardNow)
   const appointments = getAppointments()
-  const dashboardSummary = {
+  const dashboardSummary = usingApi?remoteSnapshot().dashboardSummary:{
     pendingRequests,
     todayDateId,
     nextAppointment: getNextConfirmedAppointment(appointments, dashboardNow),

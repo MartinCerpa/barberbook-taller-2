@@ -44,13 +44,13 @@ function ReservationSettings({ onBack }) {
     dismissFeedbackAfter(ERROR_FEEDBACK_DURATION)
   }
 
-  const persistPreferences = (nextPreferences) => {
+  const persistPreferences = async (nextPreferences) => {
     clearFeedbackTimers()
     preferencesRef.current = nextPreferences
     setPreferences(nextPreferences)
     setSaveStatus({ type: 'saving', message: 'Guardando…' })
 
-    const result = saveReservationPreferences(nextPreferences)
+    const result = await saveReservationPreferences(nextPreferences)
     if (!result.success) {
       const previousPreferences = savedPreferencesRef.current
       preferencesRef.current = previousPreferences

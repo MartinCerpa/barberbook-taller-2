@@ -6,8 +6,7 @@ import { business } from '../data/business'
 import { professional } from '../data/professional'
 import PublicLayout from '../layouts/PublicLayout'
 import { getFeaturedPortfolioItems } from '../services/portfolioService'
-import { getPublicProfile } from '../services/professionalService'
-import { getActiveServices } from '../services/serviceService'
+import { api } from '../services/api.js'
 
 function CalendarIcon() {
   return (
@@ -24,31 +23,48 @@ function PublicBarberPage() {
   const [publicProfile, setPublicProfile] = useState({ business, professional })
   const [featuredWork, setFeaturedWork] = useState([])
   const [bookingServices, setBookingServices] = useState([])
+  const [professionals,setProfessionals] = useState([])
+  const [selectedProfessional,setSelectedProfessional] = useState('')
+  const [loading,setLoading] = useState(true)
+  const [error,setError] = useState(null)
+  const [retry,setRetry] = useState(0)
   const primaryCtaRef = useRef(null)
 
   useEffect(() => {
     let isActive = true
 
     const loadPublicProfile = async () => {
-      const profile = await getPublicProfile()
+      setLoading(true)
+      setError(null)
+      const [people,branches,catalog] = await Promise.all([api('/professionals'),api('/branches'),api('/services')])
+      const availablePeople = people.filter((p) => p.publicVisible && branches.some((b) => b.id === p.branchId && b.active))
+      const person = availablePeople.find((p) => p.id === selectedProfessional) ?? availablePeople.find(p=>p.id==='professional-matias') ?? availablePeople[0]
+      if (!person) throw new Error('No hay profesionales disponibles en este momento.')
+      const weekly = await api(`/availability/weekly?professionalId=${person.id}`)
+      const weekdays = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+      const days = [...new Set(weekly.map((interval) => interval.weekday))].map((day) => weekdays[day]).join(', ')
+      const address = branches.find((b) => b.id === person.branchId)?.address || business.location
+      const profile = { business: { ...business,location: address,openingHours: { days: days || 'Sin jornada publicada',time: 'Consulta los intervalos al reservar' } },professional: { ...professional,...person,location: person.location||address } }
       const [portfolio, activeServices] = await Promise.all([
         getFeaturedPortfolioItems(profile.professional.id),
-        getActiveServices(),
+        Promise.resolve(catalog.filter((s) => s.active && s.branchId === person.branchId)),
       ])
 
       if (isActive) {
         setPublicProfile(profile)
         setFeaturedWork(portfolio)
         setBookingServices(activeServices)
+        setProfessionals(availablePeople)
+        setLoading(false)
       }
     }
 
-    loadPublicProfile()
+    loadPublicProfile().catch((error) => { if (isActive) { setError(error.message); setLoading(false) } })
 
     return () => {
       isActive = false
     }
-  }, [])
+  }, [selectedProfessional,retry])
 
   useEffect(() => {
     const primaryCta = primaryCtaRef.current
@@ -110,6 +126,8 @@ function PublicBarberPage() {
       <PublicLayout>
         <BookingFlow
           services={bookingServices}
+          professionalId={publicProfile.professional.id}
+          bookingHorizonDays={publicProfile.professional.bookingHorizonDays}
           onExit={() => changeView(false)}
         />
       </PublicLayout>
@@ -118,10 +136,17 @@ function PublicBarberPage() {
 
   return (
     <PublicLayout>
+      <div className="container api-profile-controls">
+        {loading && <p role="status">Cargando servicios y profesional…</p>}
+        {error && <div role="alert"><p>{error}</p><button className="button button--secondary" onClick={() => setRetry((value) => value+1)}>Reintentar conexión</button></div>}
+        {!loading && !error && professionals.length>1 && <label>Profesional <select aria-label="Profesional" value={publicProfile.professional.id} onChange={(event) => setSelectedProfessional(event.target.value)}>{professionals.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
+        {!loading && !error && bookingServices.length === 0 && <p role="status">Este profesional aún no tiene servicios disponibles.</p>}
+      </div>
       <ProfileHero
         business={publicProfile.business}
         professional={publicProfile.professional}
-        onBook={() => changeView(true)}
+        onBook={() => { if (!loading && !error && bookingServices.length) changeView(true) }}
+        canBook={!loading && !error && bookingServices.length > 0}
         primaryCtaRef={primaryCtaRef}
       />
 
@@ -130,7 +155,7 @@ function PublicBarberPage() {
         professionalName={publicProfile.professional.name}
       />
 
-      {showMobileCta && (
+      {showMobileCta && !loading && !error && bookingServices.length > 0 && (
         <div className="mobile-booking-bar">
           <button type="button" onClick={() => changeView(true)}>
             <CalendarIcon />

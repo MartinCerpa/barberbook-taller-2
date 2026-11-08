@@ -49,7 +49,7 @@ const getInstagramUrl = (instagram) => {
 const getWhatsAppUrl = (whatsapp) =>
   `https://wa.me/${whatsapp.replace(/\D/g, '')}`
 
-function ProfileHero({ business, professional, onBook, primaryCtaRef }) {
+function ProfileHero({ business, professional, onBook, primaryCtaRef, canBook = true }) {
   const [coverUnavailable, setCoverUnavailable] = useState(false)
   const [profileUnavailable, setProfileUnavailable] = useState(false)
   const initial = professional.name.trim().charAt(0)
@@ -152,6 +152,7 @@ function ProfileHero({ business, professional, onBook, primaryCtaRef }) {
               className="button button--primary booking-cta"
               type="button"
               onClick={onBook}
+              disabled={!canBook}
               ref={primaryCtaRef}
               data-reveal
               data-reveal-order="4"

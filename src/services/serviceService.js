@@ -1,3 +1,4 @@
+import { usingApi,remoteSnapshot,remoteMutation } from './remoteState.js'
 import { services } from '../data/services.js'
 import {
   clearServicePreferences,
@@ -18,6 +19,7 @@ const baseServiceIds = new Set(services.map((service) => service.id))
 const copyService = (service) => ({ ...service })
 
 export const getEffectiveServices = () => {
+  if(usingApi) return remoteSnapshot().services
   const preferences = getServicePreferences()
   const overrides = preferences?.overrides ?? {}
   const base = services.map((service) => ({
@@ -111,6 +113,7 @@ export const createLocalService = () => ({
 })
 
 export const saveServices = async (nextServices) => {
+  if(usingApi) return remoteMutation('/professional/services',nextServices.map(({id,name,description,duration,price,active,publicVisible,publicPriceVisible,isCustom})=>({id,name,description:description||'',duration,price,active,publicVisible,publicPriceVisible,isCustom})))
   if (!Array.isArray(nextServices)) {
     return { success: false, services: await getServices() }
   }
@@ -186,6 +189,7 @@ export const saveServices = async (nextServices) => {
 }
 
 export const restoreOriginalServices = async () => {
+  if(usingApi) return remoteMutation('/professional/services/restore',{},'POST')
   const success = clearServicePreferences()
 
   return {
