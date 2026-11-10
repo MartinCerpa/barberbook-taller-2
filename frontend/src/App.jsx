@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { obtenerEstadoServidor } from './services/api';
+import PublicBarberPage from './pages/PublicBarberPage';
 
 function App() {
   const [estado, setEstado] = useState('Cargando...');
@@ -14,14 +15,7 @@ function App() {
       });
   }, []);
 
-  return (
-  <main className="app-shell">
-    <section className="status-card">
-      <h1>BarberBook 💈</h1>
-      <p>Estado del backend: {estado}</p>
-    </section>
-  </main>
-);
+  return <PublicBarberPage estado={estado} />;
 }
 
 export default App;
