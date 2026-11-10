@@ -15,11 +15,13 @@ function App() {
   }, []);
 
   return (
-    <main>
+  <main className="app-shell">
+    <section className="status-card">
       <h1>BarberBook 💈</h1>
       <p>Estado del backend: {estado}</p>
-    </main>
-  );
+    </section>
+  </main>
+);
 }
 
 export default App;
