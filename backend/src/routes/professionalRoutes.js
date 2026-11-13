@@ -1,0 +1,18 @@
+import { Router } from 'express';
+import { requireSession, requireCsrf } from '../controllers/authController.js';
+import { bookings, bookingStatus, approval } from '../controllers/professionalController.js';
+import { profile, updateProfile, services, createService, updateService, hours, updateHours, agenda } from '../controllers/configurationController.js';
+const router = Router();
+router.use('/professional', requireSession, (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+router.get('/professional/bookings', bookings);
+router.patch('/professional/bookings/:id/status', requireCsrf, bookingStatus);
+router.patch('/professional/settings', requireCsrf, approval);
+router.get('/professional/profile', profile);
+router.patch('/professional/profile', requireCsrf, updateProfile);
+router.get('/professional/services', services);
+router.post('/professional/services', requireCsrf, createService);
+router.patch('/professional/services/:id', requireCsrf, updateService);
+router.get('/professional/working-hours', hours);
+router.put('/professional/working-hours', requireCsrf, updateHours);
+router.get('/professional/agenda', agenda);
+export default router;

@@ -1,87 +1,15 @@
-.app-shell {
-  max-width: 1152px;
-  margin: 0 auto;
-  padding: 40px 24px;
-}
-
-.status-card {
-  max-width: 500px;
-  padding: 32px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-}
-
-.status-card h1 {
-  color: var(--color-accent);
-  margin-top: 0;
-}
-
-.public-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
-}
-
-.brand-logo {
-  padding: 9px;
-  border-radius: var(--radius-medium);
-  background: var(--color-accent);
-  color: var(--color-accent-text);
-  font-weight: bold;
-}
-
-.server-status {
-  margin-left: auto;
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
-}
-
-.public-profile {
-  max-width: 850px;
-  overflow: hidden;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-}
-
-.public-profile__cover {
-  display: flex;
-  align-items: end;
-  min-height: 180px;
-  padding: 32px;
-  background: var(--color-accent);
-  color: var(--color-accent-text);
-  font-family: var(--font-display);
-  font-size: 2rem;
-}
-
-.public-profile__content {
-  padding: 32px;
-}
-
-.profile-label {
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.public-profile h1 {
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-}
-
-.public-profile button {
-  padding: 12px 20px;
-  border: none;
-  border-radius: var(--radius-medium);
-  background: var(--color-accent);
-  color: var(--color-accent-text);
-}
-
-.public-profile button:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
+/* Ajustes del perfil original al contrato del frontend nuevo. */
+.catalog-status { padding-block: 4rem; min-height: 50vh; }
+.catalog-status h1 { font-size: clamp(1.5rem, 4vw, 2rem); }
+.professional-picker { max-width: 40rem; padding-top: 1.5rem; }
+.form-field select { width: 100%; padding: 0.8rem; border: 1px solid var(--color-border); border-radius: var(--radius-small); color: var(--color-text); background: var(--color-surface); }
+.availability-error { margin-bottom: 1.25rem; color: var(--color-error); }
+.submission-error { padding: 1rem; border-radius: var(--radius-small); background: var(--color-error-surface); }
+.profile-card__identity, .profile-card__identity h1 { overflow-wrap: anywhere; min-width: 0; }
+.booking-details dd, .booking-success__summary dd { overflow-wrap: anywhere; min-width: 0; }
+.skip-link { position: absolute; top: -5rem; left: 1rem; z-index: 20; padding: 0.75rem; background: var(--color-surface); color: var(--color-text); }
+.skip-link:focus { top: 0.5rem; }
+@media (max-width: 42rem) {
+  .site-footer { padding-bottom: 7rem; }
+  .booking-topbar > span { display: none; }
 }

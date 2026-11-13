@@ -1,0 +1,55 @@
+/* Controles del acceso original y ajustes para las operaciones disponibles. */
+.login-shell { max-width: 32rem; padding-block: 3rem; }
+.login-shell form { display: grid; gap: 1.3rem; margin-block: 1.5rem; }
+.professional-logout { padding: .5rem .7rem; min-height: 44px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); background: var(--color-surface); cursor: pointer; }
+.panel-message { margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--color-error); border-radius: var(--radius-small); background: var(--color-surface); }
+.panel-message p { margin-top: 0; }
+.panel-message button { min-height: 44px; padding: .5rem 1rem; cursor: pointer; }
+.panel-booking-date { color: var(--color-text-muted); font-size: .85rem; }
+.panel-empty { padding: 2rem; border: 1px solid var(--color-border); border-radius: var(--radius-medium); background: var(--color-surface); color: var(--color-text-muted); }
+.dashboard-card__value { overflow-wrap: anywhere; }
+.admin-shell .dashboard-card--dark p { color: var(--color-sidebar-muted); }
+.panel-form-fields { display: grid; gap: inherit; min-width: 0; margin: 0; padding: 0; border: 0; }
+.panel-save-feedback { padding: 1rem; border-radius: var(--radius-small); background: var(--color-success-surface); color: var(--color-success); }
+.panel-save-feedback[data-type='error'] { background: var(--color-error-surface); color: var(--color-error); }
+.panel-agenda-note { padding: 1rem; color: var(--color-text-muted); }
+.schedule-item__action { text-decoration: none; }
+.admin-shell button:disabled { cursor: wait; opacity: .65; }
+.admin-shell .reservation-mode-options:disabled label { cursor: wait; }
+.admin-mobile-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 600px) {
+  .professional-logout { font-size: .75rem; }
+  .admin-header__actions { gap: .4rem; }
+  .admin-header .admin-public-link { display: none; }
+}
+
+/* Acceso público recuperado de PublicLayout del proyecto original. */
+
+
+.professional-access {
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.professional-access:hover {
+  color: var(--color-accent);
+}
+
+.theme-toggle:focus-visible,
+.professional-access:focus-visible,
+.button:focus-visible,
+.location-link:focus-visible,
+.brand:focus-visible,
+.mobile-booking-bar button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 25rem) {
+  .professional-access__suffix {
+    display: none;
+  }
+}
